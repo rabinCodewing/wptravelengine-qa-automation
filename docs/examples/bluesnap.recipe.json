@@ -1,0 +1,22 @@
+{
+  "useInsteadOfCode": true,
+  "card": {
+    "number": "5425233430109903",
+    "expiry": "0429",
+    "cvc": "837",
+    "name": "Test Customer",
+    "email": "customer@example.com"
+  },
+  "fill": [
+    { "waitFor": "#CC-cardNumber", "timeout": 90000, "label": "card form mounted" },
+    { "fill": "#CC-name", "value": "{card.name}", "ifEmpty": true, "optional": true, "timeout": 3000 },
+    { "fill": "#CC-email", "value": "{card.email}", "ifEmpty": true, "optional": true, "timeout": 3000 },
+    { "type": "#CC-cardNumber", "value": "{card.number}" },
+    { "type": "#CC-expirationDate", "value": "{card.expiry}" },
+    { "type": "#CC-securityCode", "value": "{card.cvc}" }
+  ],
+  "submit": [
+    { "click": "#pay-button", "timeout": 45000 },
+    { "expect": "navigation", "timeout": 60000, "optional": true }
+  ]
+}

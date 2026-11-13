@@ -1,0 +1,13 @@
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# Secrets
+.env
+
+# Gateways, keys and payment-form recipes saved locally (config/gatewayStore.js)
+/data/
