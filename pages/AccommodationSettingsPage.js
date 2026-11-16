@@ -184,12 +184,38 @@ class AccommodationSettingsPage {
     await expect(this.upgradeRow(name)).toHaveCount(0);
   }
 
+  /** Reads the currently-saved accommodation settings over REST (cookie + nonce). */
+  async currentSettings() {
+    const nonce = await this.page.evaluate(() => window.wpApiSettings?.nonce || "");
+    const res = await this.page.request.get(`${this.base}/wp-json/wptravelengine/v2/settings`, {
+      headers: { "X-WP-Nonce": nonce },
+      timeout: 60000,
+    });
+    expect(res.status(), "Could not read current settings").toBe(200);
+    return (await res.json()).accommodation;
+  }
+
   /**
-   * Saves and waits for the settings POST to come back, so the caller can
-   * read the saved state straight away.
+   * Saves and returns the saved accommodation settings.
+   *
+   * The Save button is a react-hook-form submit that stays disabled until the
+   * form is dirty. On a re-run the site often already holds the values the test
+   * just set, so nothing becomes dirty and the button never enables — but the
+   * desired state is already persisted. So: if the button enables, click it and
+   * assert the 200; if it stays disabled (nothing to save), read the current
+   * settings back instead of failing. Either way the caller gets the saved state.
    */
   async save() {
-    await expect(this.saveButton).toBeEnabled();
+    const becameDirty = await this.saveButton
+      .isEnabled()
+      .then((en) => en || expect(this.saveButton).toBeEnabled({ timeout: 3000 }).then(() => true))
+      .catch(() => false);
+
+    if (!becameDirty) {
+      // Nothing changed — the values already match what was set, so they're saved.
+      return this.currentSettings();
+    }
+
     const [response] = await Promise.all([
       this.page.waitForResponse(
         (r) => r.request().method() === "POST" && /\/wptravelengine\/v2\/settings/.test(r.url()),

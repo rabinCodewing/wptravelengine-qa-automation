@@ -29,6 +29,14 @@ require("dotenv").config({ path: path.join(ROOT, ".env"), quiet: true });
 
 const { ADDONS, GROUP_ORDER } = require("../config/addons");
 const { buildReport } = require("./repoAudit");
+const doctor = require("./doctor");
+const { CHECKLIST } = require("./doctor/checklist");
+const { evaluate: evaluateStandards } = require("./doctor/standards");
+const { PAYLOADS } = require("./doctor/payloads");
+const { buildUrlPayloads } = require("./doctor/urlBuilder");
+const { buildPlan: buildRequestPlan } = require("./doctor/requestBuilder");
+let doctorScan = null; // the security scan in progress, if any (one at a time)
+let doctorLast = null; // how the last scan ended: { ok, name } or { ok: false, error }
 const slack = require("./slackNotify");
 const schedule = require("./schedule");
 const CLI = path.join(ROOT, "node_modules", "@playwright", "test", "cli.js");
@@ -409,6 +417,99 @@ const server = http.createServer(async (req, res) => {
       const doScan = req.method === "POST";
       return sendJson(res, 200, { ok: true, report: await buildReport(addon, { doScan }) });
     }
+    // ── Security page (WPTE Doctor) ──
+    if (req.method === "GET" && p === "/api/security") {
+      const targets = ADDONS.filter((a) => fs.existsSync(path.join(addonDir(a.slug), "repo"))).map((a) => ({ value: a.slug, label: a.name }));
+      return sendJson(res, 200, {
+        ok: true,
+        targets,
+        site: process.env.FRONTEND_URL || "",
+        // Only whether a test user is set in .env, never the password.
+        envTestUser: process.env.SECURITY_TEST_USER && process.env.SECURITY_TEST_PASSWORD ? process.env.SECURITY_TEST_USER : "",
+        reports: doctor.listReports(),
+        scanning: doctorScan && { startedAt: doctorScan.startedAt, log: doctorScan.log.slice(-6) },
+        last: doctorLast,
+      });
+    }
+    // Overview / threat model / audit: scan findings + checklist results mapped onto them.
+    if (req.method === "GET" && p === "/api/security/standards") {
+      // Same finding ID in several reports (e.g. code-only and code+site scans) counts once, from the newest report.
+      const byId = new Map();
+      for (const r of doctor.listReports()) {
+        for (const f of doctor.readReport(r.name)?.findings || []) {
+          if (!byId.has(f.id)) byId.set(f.id, { id: f.id, rule: f.rule, title: f.title, severity: f.severity, file: f.file, report: r.name });
+        }
+      }
+      const findings = [...byId.values()];
+      const results = readJson(path.join(ROOT, "data", "doctor", "checklist.json"), {});
+      return sendJson(res, 200, { ok: true, ...evaluateStandards({ findings, results, checklist: CHECKLIST }) });
+    }
+    // Detection payloads reference.
+    if (req.method === "GET" && p === "/api/security/payloads") {
+      return sendJson(res, 200, { ok: true, payloads: PAYLOADS });
+    }
+    // Payload URL builder: target URL → clickable payload URLs + curl.
+    if (req.method === "POST" && p === "/api/security/build-url") {
+      const { url, params, classes } = await readBody(req);
+      try {
+        return sendJson(res, 200, { ok: true, result: buildUrlPayloads(url, { params, classes }) });
+      } catch (error) {
+        return sendJson(res, 400, { ok: false, error: error.message });
+      }
+    }
+    // Request-aware plan: a pasted URL / curl / raw HTTP request → full test plan.
+    if (req.method === "POST" && p === "/api/security/build-request") {
+      const { request, params, classes } = await readBody(req);
+      try {
+        return sendJson(res, 200, { ok: true, plan: buildRequestPlan(request, { params, classes }) });
+      } catch (error) {
+        return sendJson(res, 400, { ok: false, error: error.message });
+      }
+    }
+    // Manual checklist: the items plus what the tester recorded for each.
+    if (p === "/api/security/checklist" && (req.method === "GET" || req.method === "PUT")) {
+      const file = path.join(ROOT, "data", "doctor", "checklist.json");
+      const results = readJson(file, {});
+      if (req.method === "PUT") {
+        const { id, status, note } = await readBody(req);
+        if (!id) return sendJson(res, 400, { ok: false, error: "Missing id" });
+        if (!status && !note) delete results[id];
+        else results[id] = { status: status || "", note: note || "", at: new Date().toISOString() };
+        fs.mkdirSync(path.dirname(file), { recursive: true });
+        fs.writeFileSync(file, JSON.stringify(results, null, 2));
+      }
+      return sendJson(res, 200, { ok: true, checklist: CHECKLIST, results });
+    }
+    const secMatch = p.match(/^\/api\/security\/report\/([\w.+-]+)$/);
+    if (req.method === "GET" && secMatch) {
+      const report = doctor.readReport(secMatch[1]);
+      return report ? sendJson(res, 200, { ok: true, report }) : sendJson(res, 404, { ok: false, error: "No such report." });
+    }
+    if (req.method === "POST" && p === "/api/security/scan") {
+      if (doctorScan) return sendJson(res, 409, { ok: false, error: "A scan is already running." });
+      const { repo, site, min, deps, fuzz, user, pass } = await readBody(req);
+      // Runs in the background (a fuzz run takes minutes); the page polls /api/security.
+      doctorScan = { repo, site, startedAt: new Date().toISOString(), log: [] };
+      const scan = doctorScan;
+      doctor
+        .runDoctor(
+          { repo: repo || undefined, site: site || undefined, min: min || "info", deps: !!deps, fuzz: !!fuzz, user: user || undefined, pass: pass || undefined },
+          (l) => {
+            console.log(`[security] ${l}`);
+            scan.log.push(l);
+          },
+        )
+        .then((result) => (doctorLast = { ok: true, name: result.name, at: new Date().toISOString() }))
+        .catch((error) => (doctorLast = { ok: false, error: error.message, at: new Date().toISOString() }))
+        .finally(() => (doctorScan = null));
+      return sendJson(res, 202, { ok: true, started: true });
+    }
+    if (req.method === "POST" && p === "/api/security/ignore") {
+      const { name, id } = await readBody(req);
+      doctor.ignoreFinding(name, id);
+      return sendJson(res, 200, { ok: true, report: doctor.readReport(name) });
+    }
+
     if (req.method === "GET" && p === "/api/stream") {
       res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-store", Connection: "keep-alive" });
       res.write(": connected\n\n");

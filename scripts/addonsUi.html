@@ -351,7 +351,40 @@
   .sev-high, .sev-dot.high, .sev-pill.high { --sev: var(--move); --sev-wash: var(--move-wash); }
   .sev-medium, .sev-dot.medium, .sev-pill.medium { --sev: oklch(62% 0.11 95); --sev-wash: oklch(95% 0.05 95); }
   .sev-low, .sev-dot.low, .sev-pill.low { --sev: var(--ink-3); --sev-wash: var(--paper-2); }
-  :root:not([data-theme="light"]) .sev-medium, :root:not([data-theme="light"]) .sev-dot.medium, :root:not([data-theme="light"]) .sev-pill.medium { --sev: oklch(80% 0.12 95); --sev-wash: oklch(32% 0.06 95); }
+  .sev-info, .sev-dot.info, .sev-pill.info { --sev: var(--rule); --sev-wash: var(--paper-2); }
+  .sev-pill.info { color: var(--ink-3); }
+  .sev-pass, .sev-dot.pass, .sev-pill.pass { --sev: var(--pass); --sev-wash: var(--pass-wash); }
+  .finding-body .snip { margin: 0; padding: 10px 12px; border-radius: 8px; background: var(--term); color: var(--term-ink); font: 12px/1.55 var(--mono); overflow-x: auto; white-space: pre; }
+  .finding-body .loc a code, .finding-body .loc > code { font: 12px var(--mono); background: var(--paper-2); padding: 2px 6px; border-radius: 5px; color: var(--ink); }
+  .finding-body .actions .btn.sm { cursor: pointer; }
+  .pl-group { display: grid; gap: 4px; }
+  .pl-group .hint b { color: var(--ink); }
+  .pl-target { margin-top: 14px; padding: 14px; border: 1px dashed var(--rule); border-radius: 10px; display: grid; gap: 6px; }
+  .pl-target > b { font: 600 14px var(--display); }
+  .pl-list, .pl-inline { display: grid; gap: 8px; margin-top: 10px; }
+  .pl-inline { margin-top: 6px; padding: 12px 14px; border-radius: 10px; background: var(--paper-2); }
+  .pl-inline > b { display: block; margin-bottom: 8px; }
+  .pl-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .pl-input { font: 12.5px var(--mono); background: var(--term); color: var(--term-ink); border: 1px solid var(--rule); padding: 6px 9px; border-radius: 6px; width: min(420px, 100%); min-width: 0; }
+  .pl-input:focus { outline: 2px solid color-mix(in oklch, var(--brand) 55%, transparent); outline-offset: 1px; border-color: var(--brand); }
+  .pl-code { font: 12.5px var(--mono); background: var(--term); color: var(--term-ink); padding: 6px 9px; border-radius: 6px; overflow-x: auto; max-width: 100%; white-space: pre; }
+  .pl-copy, .pl-enc { cursor: pointer; flex: none; }
+  a.pl-open { text-decoration: none; }
+  a.pl-open.disabled { opacity: .5; }
+  .pl-row .hint { flex: 1; min-width: 180px; }
+  .ub-group { margin-top: 12px; border: 1px solid var(--rule); border-radius: 10px; padding: 4px 14px 10px; }
+  .ub-group > summary { cursor: pointer; font: 600 14px var(--display); color: var(--ink); padding: 10px 0; }
+  .ub-group .n { display: inline-block; min-width: 18px; text-align: center; font: 700 11px/1.5 var(--mono); padding: 1px 6px; border-radius: 999px; background: var(--paper-2); color: var(--ink-2); }
+  .ub-row { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) auto; gap: 10px 16px; align-items: start; padding: 10px 0; border-top: 1px solid var(--rule-soft); }
+  .ub-main { display: grid; gap: 4px; min-width: 0; }
+  .ub-main .pl-code { max-width: 100%; }
+  .ub-sv { display: grid; gap: 3px; }
+  .ub-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; justify-content: flex-end; }
+  .ub-actions .btn.sm, .ub-copy { cursor: pointer; }
+  @media (max-width: 980px) { .ub-row { grid-template-columns: minmax(0, 1fr); } .ub-actions { justify-content: flex-start; } }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .sev-medium, :root:not([data-theme="light"]) .sev-dot.medium, :root:not([data-theme="light"]) .sev-pill.medium { --sev: oklch(80% 0.12 95); --sev-wash: oklch(32% 0.06 95); }
+  }
   :root[data-theme="dark"] .sev-medium, :root[data-theme="dark"] .sev-dot.medium, :root[data-theme="dark"] .sev-pill.medium { --sev: oklch(80% 0.12 95); --sev-wash: oklch(32% 0.06 95); }
 
   .report-bar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
@@ -445,6 +478,7 @@
     <nav class="catalog" id="catalog" aria-label="Add-on list"></nav>
     <div class="index-foot">
       <span class="foot-links">
+        <a class="foot-link" id="securityLink" href="#/security">Security</a>
         <a class="foot-link" id="settingsLink" href="#/settings">Settings</a>
         <a class="foot-link" href="/report/" target="_blank" rel="noopener">HTML report ↗</a>
       </span>
@@ -508,6 +542,13 @@ const go = (slug, tab) => { location.hash = `#/${slug}${tab ? "/" + tab : ""}`; 
 async function load(slug) {
   renderCatalog();
   $("#settingsLink").toggleAttribute("aria-current", slug === "settings");
+  $("#securityLink").toggleAttribute("aria-current", slug === "security");
+  if (slug === "security") {
+    $("#securityLink").setAttribute("aria-current", "page");
+    renderBusy();
+    await loadSecurity();
+    return;
+  }
   if (slug === "settings") {
     $("#settingsLink").setAttribute("aria-current", "page");
     renderBusy();
@@ -578,7 +619,7 @@ function renderBusy() {
 
 function renderStage() {
   renderBusy();
-  if (S.slug === "settings") return; // the Settings page renders itself (renderSettings)
+  if (S.slug === "settings" || S.slug === "security") return; // these pages render themselves
   const meta = S.catalog.addons.find((a) => a.slug === S.slug);
   if (!meta) { $("#view").innerHTML = `<div class="head"><div><p class="eyebrow">Not found</p><h1>Unknown add-on</h1></div></div>`; return; }
   if (!meta.automated) return renderTodo(meta);
@@ -950,6 +991,597 @@ function renderFinding(f, repoUrl, commit) {
       ${f.fix ? `<p class="fix"><b>Fix.</b> ${esc(f.fix)}</p>` : ""}
     </div>` : ""}
   </article>`;
+}
+
+// ── Security page (#/security) — WPTE Doctor ─────────────────────────────
+// Scans an add-on's source and/or probes the site (read-only), then lists the
+// findings as ready-to-file issues. Backed by scripts/doctor.js.
+const SEC_SEV = ["critical", "high", "medium", "low", "info"];
+const SEC = { data: null, report: null, name: null, open: new Set(), busy: false, error: "", sevFilter: null,
+  tab: "overview", cl: null, clOpen: new Set(), clFilter: "all", std: null, pl: null,
+  ub: { request: "", url: "", refParam: "", params: "", classes: new Set(), result: null, error: "", busy: false },
+  form: { repo: "", site: "", useSite: false, deps: false, fuzz: false, useUser: false, user: "", pass: "" } };
+
+async function loadChecklist() {
+  try { SEC.cl = await (await fetch("/api/security/checklist")).json(); } catch (e) { SEC.cl = { error: e.message }; }
+  renderSecurity();
+}
+
+async function saveCheck(id, patch) {
+  const cur = SEC.cl.results[id] || {};
+  const body = { id, status: patch.status ?? cur.status ?? "", note: patch.note ?? cur.note ?? "" };
+  const r = await (await fetch("/api/security/checklist", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })).json();
+  if (r.ok) SEC.cl.results = r.results;
+}
+
+// Payload groups that apply to a given checklist item id.
+function payloadsFor(id) {
+  if (!Array.isArray(SEC.pl)) return [];
+  return SEC.pl.filter((g) => (g.for || []).includes(id));
+}
+
+function renderChecklist() {
+  const c = SEC.cl;
+  if (!c) { loadChecklist(); return `<p class="hint">Loading checklist…</p>`; }
+  if (!SEC.pl) loadPayloads().then(renderSecurity);
+  if (c.error) return `<p class="msg bad">${esc(c.error)}</p>`;
+  const all = c.checklist.flatMap((g) => g.items);
+  const st = (id) => c.results[id]?.status || "";
+  const n = (s) => all.filter((i) => st(i.id) === s).length;
+  const done = all.length - n("");
+  const show = (i) => SEC.clFilter === "all" || (SEC.clFilter === "todo" ? !st(i.id) : st(i.id) === SEC.clFilter);
+  return `
+    <section class="card wide">
+      <div class="card-head"><h2>Manual security checklist</h2><span class="chip">${done} of ${all.length} done</span></div>
+      <p class="hint">Tests a scanner can't do safely: tampering with bookings and payments, two-account access tests, uploads, logins. Run them on the QA site only. Mark each one Pass, Fail or N/A and add notes; your results are saved in <code>data/doctor/checklist.json</code>.</p>
+      <div class="coverage-bar" aria-hidden="true" style="height:6px">${all.map((i) => `<i class="${st(i.id) === "pass" ? "auto" : ""} ${st(i.id) === "fail" ? "failed" : ""}"></i>`).join("")}</div>
+      <div class="seg">${[["all", `All ${all.length}`], ["todo", `To do ${all.length - done}`], ["fail", `Fail ${n("fail")}`], ["pass", `Pass ${n("pass")}`], ["na", `N/A ${n("na")}`]]
+        .map(([k, l]) => `<button data-clf="${k}" aria-pressed="${SEC.clFilter === k}">${l}</button>`).join("")}</div>
+    </section>
+    ${c.checklist.map((g) => {
+      const items = g.items.filter(show);
+      if (!items.length) return "";
+      return `<section class="card wide">
+        <div class="card-head"><h2>${esc(g.area)}</h2><span class="chip">${esc(g.owasp)}</span><span class="hint">${g.items.filter((i) => st(i.id)).length}/${g.items.length}</span></div>
+        <div class="findings">${items.map((i) => {
+          const r = c.results[i.id] || {};
+          const open = SEC.clOpen.has(i.id);
+          const sev = r.status === "fail" ? "critical" : r.status === "pass" ? "pass" : r.status === "na" ? "info" : "low";
+          return `<article class="finding sev-${sev}${open ? " open" : ""}">
+            <div class="finding-head" data-cl="${esc(i.id)}" role="button" tabindex="0" aria-expanded="${open}">
+              <span class="sev-dot ${sev}"></span>
+              <div class="finding-title"><b>${esc(i.title)}</b>
+                <div class="finding-sub">${r.status ? `<span class="sev-pill ${sev}">${{ pass: "Pass", fail: "Fail", na: "N/A" }[r.status]}</span>` : `<span class="stat-pill">to do</span>`}${r.note ? `<span class="hint">${esc(r.note.slice(0, 90))}${r.note.length > 90 ? "…" : ""}</span>` : ""}${r.at ? `<span class="hint">· ${ago(r.at)}</span>` : ""}</div>
+              </div>
+              <svg class="chev" viewBox="0 0 20 20" aria-hidden="true"><path d="M6 8l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            ${open ? `<div class="finding-body">
+              <div class="steps"><b>How to test</b><ol>${i.steps.map((s) => `<li>${secMd(s)}</li>`).join("")}</ol></div>
+              <p class="fix"><b>Expected.</b> ${secMd(i.expected)}</p>
+              ${payloadsFor(i.id).map((g) => `<div class="pl-inline"><b>Payloads to send</b>${g.items.map((x) => payloadChip(x.p, x.note, x.label)).join("")}<p class="hint" style="margin-top:6px">Look for: ${esc(g.lookFor)}</p></div>`).join("")}
+              <div class="seg">${[["pass", "Pass"], ["fail", "Fail"], ["na", "N/A"], ["", "Not tested"]].map(([k, l]) => `<button data-cls="${esc(i.id)}" data-v="${k}" aria-pressed="${(r.status || "") === k}">${l}</button>`).join("")}</div>
+              <label class="field">Notes / evidence (request, booking ID, screenshot path…)<textarea data-cln="${esc(i.id)}" rows="3" style="font:400 14px var(--body);color:var(--ink);background:var(--paper);border:1px solid var(--rule);border-radius:9px;padding:9px 11px;width:100%">${esc(r.note || "")}</textarea></label>
+              ${r.status === "fail" ? `<div class="actions"><button class="btn sm" data-clcopy="${esc(i.id)}">Copy as issue</button><span class="msg" id="clm-${esc(i.id)}"></span></div>` : ""}
+            </div>` : ""}
+          </article>`;
+        }).join("")}</div>
+      </section>`;
+    }).join("")}`;
+}
+
+// ── Payloads (detection strings for the manual tests) ──────────────────────
+async function loadPayloads() {
+  if (SEC.pl) return;
+  try { SEC.pl = (await (await fetch("/api/security/payloads")).json()).payloads; } catch (e) { SEC.pl = { error: e.message }; }
+}
+
+// Builds a full URL from the Payloads-tab target, with `payload` encoded into
+// the chosen parameter (others left normal). Read live at click time so your
+// edits to a payload are included. null when no valid target URL is set.
+function refUrl(payload) {
+  const t = (SEC.ub.url || "").trim();
+  if (!t) return null;
+  let u;
+  try { u = new URL(t); } catch { return null; }
+  const pairs = [...u.searchParams.entries()];
+  let param = (SEC.ub.refParam || "").trim();
+  if (!param) param = pairs[0]?.[0] || "s"; // default: first param, else WordPress search ?s=
+  if (!pairs.some(([k]) => k === param)) pairs.push([param, ""]);
+  const query = pairs.map(([k, v]) => `${encodeURIComponent(k)}=${k === param ? encodeURIComponent(payload) : encodeURIComponent(v)}`).join("&");
+  return `${u.origin}${u.pathname}?${query}${u.hash || ""}`;
+}
+
+// An editable payload row: tweak it, copy it, URL-encode it, or (when a target
+// URL is set on this tab) copy/open it as a full URL. The real value lives in
+// the input (or data-full when too long), so quotes/brackets survive edits.
+function payloadChip(p, note, label, withUrl = false) {
+  const long = label != null;
+  const field = long
+    ? `<code class="pl-code" data-full="${esc(p)}" title="${esc(label)}">${esc(label)}</code>`
+    : `<input class="pl-input" value="${esc(p)}" spellcheck="false" autocapitalize="off" autocomplete="off">`;
+  return `<div class="pl-row">
+    ${field}
+    <button class="btn sm pl-copy" type="button">Copy</button>
+    ${long ? "" : `<button class="btn sm pl-enc" type="button" title="Replace with a URL-safe (percent-encoded) version">URL-encode</button>`}
+    ${withUrl ? `<button class="btn sm pl-url" type="button" title="Copy the full URL with this payload in it">Copy URL</button><a class="btn sm pl-open" target="_blank" rel="noopener" title="Open the URL in a new tab (edit it in the address bar there)">Open ↗</a>` : ""}
+    ${note ? `<span class="hint">${esc(note)}</span>` : ""}
+  </div>`;
+}
+
+function payloadBlock(g) {
+  return `<div class="pl-group">
+    <div class="card-head"><h2 style="font-size:18px">${esc(g.title)}</h2></div>
+    <p class="hint"><b>How it works.</b> ${esc(g.how)}</p>
+    <p class="hint"><b>Where to try it.</b> ${esc(g.where)}</p>
+    <div class="pl-list">${g.items.map((i) => payloadChip(i.p, i.note, i.label, true)).join("")}</div>
+    <p class="fix" style="margin-top:10px"><b>Look for.</b> ${esc(g.lookFor)}</p>
+  </div>`;
+}
+
+const UB_CLASSES = [["xss", "XSS"], ["sqli", "SQLi"], ["traversal", "Traversal"], ["ssrf", "SSRF"], ["redirect", "Open redirect"], ["template", "Template"], ["email", "Email header"], ["boundaries", "Boundaries"]];
+
+async function runUrlBuilder() {
+  const b = SEC.ub;
+  if (!b.request.trim()) { b.error = "Paste a URL, a curl command, or a raw HTTP request first."; return renderSecurity(); }
+  b.busy = true; b.error = ""; renderSecurity();
+  try {
+    const res = await fetch("/api/security/build-request", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ request: b.request.trim(), params: b.params.trim() || undefined, classes: b.classes.size ? [...b.classes] : undefined }) });
+    const body = await res.json();
+    if (!body.ok) throw new Error(body.error);
+    b.result = body.plan;
+  } catch (e) { b.error = e.message; b.result = null; }
+  b.busy = false; renderSecurity();
+}
+
+function ubRow(r) {
+  const payload = esc(r.label || r.payload);
+  const actions = r.url
+    ? `<a class="btn sm" href="${esc(r.url)}" target="_blank" rel="noopener">Open ↗</a><button class="btn sm ub-copy" type="button" data-v="${esc(r.url)}">Copy URL</button>`
+    : `<span class="present yes">${esc(r.method)}${r.loc === "json" ? " · JSON" : r.loc === "form" ? " · form" : ""}</span><button class="btn sm ub-copy" type="button" data-v="${esc(r.request)}">Copy curl</button>`;
+  return `<div class="ub-row">
+    <div class="ub-main"><code class="pl-code">${payload}</code> <span class="hint">${esc(r.note || "")}${r.encoded ? ` · encoded: <code>${esc(String(r.encoded).slice(0, 40))}</code>` : ""}</span></div>
+    <div class="ub-sv"><span class="hint">✅ ${esc(r.safe)}</span><span class="hint">⚠️ ${esc(r.vulnerable)}</span></div>
+    <div class="ub-actions">${actions}</div>
+  </div>`;
+}
+
+function renderUrlBuilder() {
+  const b = SEC.ub;
+  const r = b.result;
+  return `<section class="card wide">
+    <div class="card-head"><h2>Request builder</h2></div>
+    <p class="hint">Paste a request from your QA site — a plain URL, a curl command (DevTools → Copy as cURL), or a raw HTTP request (Burp). The builder changes <b>one payload in one parameter</b> per request (query, form field or JSON field), keeps the rest — including your nonce and cookies — normal, and adds a boundary block for numeric/price/date fields. <b>Authorized / own targets only.</b></p>
+    <label class="field">Target request<textarea id="ubReq" rows="4" placeholder="https://your-qa-site/?page_id=5&redirect=/thanks&#10;— or —&#10;curl 'https://site/wp-admin/admin-ajax.php' -H 'X-WP-Nonce: …' --data-raw 'action=wte_add_trip_to_cart&trip_id=5&price=100'" spellcheck="false" style="font:12.5px var(--mono);resize:vertical">${esc(b.request)}</textarea></label>
+    <label class="field">Parameters to target <span class="hint">(optional, comma-separated; default: all. For JSON use a dotted path, e.g. items.0.price)</span><input id="ubParams" value="${esc(b.params)}" placeholder="price, quantity, redirect" spellcheck="false" autocomplete="off"></label>
+    <div class="field">Vulnerability classes <span class="hint">(optional; default: all relevant per parameter)</span>
+      <div class="days">${UB_CLASSES.map(([k, l]) => `<button type="button" data-ubc="${k}" aria-pressed="${b.classes.has(k)}" style="width:auto;padding:7px 11px">${l}</button>`).join("")}</div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="ubRun" ${b.busy ? "disabled" : ""}>${b.busy ? "Building…" : "Build test plan"}</button>
+      ${r ? `<button class="btn sm" id="ubCopyAll" type="button">Copy all as Markdown</button>` : ""}
+      <span class="msg bad">${esc(b.error)}</span><span class="msg" id="ubMsg"></span>
+    </div>
+    ${r ? `<p class="hint">${r.groups.reduce((n, g) => n + g.rows.length, 0)} request(s) across ${r.groups.length} class(es) · <code>${esc(r.method)} ${esc(r.url)}</code>${r.hasAuth ? " · includes your session — don’t share the output" : ""}.</p>
+      ${r.groups.map((g) => `<details class="ub-group" open><summary><b>${esc(g.title)}</b> <span class="n">${g.rows.length}</span></summary>${g.rows.map(ubRow).join("")}</details>`).join("")}
+      <div class="pl-inline"><b>What to watch in the response</b><ul class="ok-list">${r.watch.map((w) => `<li>${esc(w)}</li>`).join("")}</ul></div>` : ""}
+  </section>`;
+}
+
+function bindUrlBuilder(v) {
+  const b = SEC.ub;
+  const rq = $("#ubReq", v); if (rq) rq.oninput = (e) => { b.request = e.target.value; };
+  const prm = $("#ubParams", v); if (prm) prm.oninput = (e) => { b.params = e.target.value; };
+  v.querySelectorAll("[data-ubc]").forEach((btn) => (btn.onclick = () => { const k = btn.dataset.ubc; b.classes.has(k) ? b.classes.delete(k) : b.classes.add(k); renderSecurity(); }));
+  const run = $("#ubRun", v); if (run) run.onclick = runUrlBuilder;
+  v.querySelectorAll(".ub-copy").forEach((btn) => (btn.onclick = async () => {
+    try { await navigator.clipboard.writeText(btn.dataset.v); const t = btn.textContent; btn.textContent = "Copied"; setTimeout(() => (btn.textContent = t), 1200); } catch { btn.textContent = "Blocked"; }
+  }));
+  const ca = $("#ubCopyAll", v);
+  if (ca) ca.onclick = async () => {
+    try { await navigator.clipboard.writeText(urlBuilderMarkdown(b.result)); flash("ubMsg", "Copied as Markdown."); } catch { flash("ubMsg", "Clipboard blocked.", "bad"); }
+  };
+}
+
+function urlBuilderMarkdown(r) {
+  const lines = [`# Payload test plan — ${r.method} ${r.url}`, "", "> Authorized / own targets only. Detection only.", r.hasAuth ? "> Includes your session cookie/nonce — don't share publicly." : "", ""].filter(Boolean);
+  for (const g of r.groups) {
+    lines.push(`## ${g.title}`, "", "| Param | Payload | Request | Safe / Vulnerable |", "| --- | --- | --- | --- |");
+    for (const row of g.rows) {
+      const req = row.url || row.request;
+      lines.push(`| ${row.param} | \`${(row.label || row.payload).replace(/\|/g, "\\|").slice(0, 60)}\` | ${req.replace(/\|/g, "\\|")} | ✅ ${row.safe} / ⚠️ ${row.vulnerable} |`);
+    }
+    lines.push("");
+  }
+  lines.push("## What to watch in the response", "", ...r.watch.map((w) => `- ${w}`));
+  return lines.join("\n");
+}
+
+function renderPayloads() {
+  const g = SEC.pl;
+  if (!g) { loadPayloads().then(renderSecurity); return `<p class="hint">Loading payloads…</p>`; }
+  if (g.error) return `<p class="msg bad">${esc(g.error)}</p>`;
+  const hasTarget = !!(SEC.ub.url || "").trim();
+  return `${renderUrlBuilder()}
+    <section class="card wide">
+      <div class="card-head"><h2>Detection payloads</h2></div>
+      <p class="report-intro">Benign strings that reveal whether a weakness exists. Read <b>How it works</b> to understand what you’re testing, <b>edit any payload</b> in place to try variations, then <b>Copy</b> it into the field a test names and check <b>Look for</b>. They don’t steal data or run commands — use them only on the QA site, and replace <code>example.org</code> / <code>BURP-URL</code> with your own request-catcher where noted.</p>
+      <div class="pl-target">
+        <b>Make copyable URLs</b>
+        <p class="hint">Set a target page and parameter, and every payload below gets <b>Copy URL</b> and <b>Open ↗</b> — using whatever you’ve typed into that payload, so edit first, then copy. Leave the parameter blank to use the URL’s first one (or <code>?s=</code> for search).</p>
+        <div class="row2">
+          <label class="field">Target URL<input id="plUrl" value="${esc(SEC.ub.url || "")}" placeholder="https://your-qa-site/?s=test" spellcheck="false" autocomplete="off"></label>
+          <label class="field">Parameter<input id="plParam" value="${esc(SEC.ub.refParam || "")}" placeholder="s" spellcheck="false" autocomplete="off"></label>
+        </div>
+        ${hasTarget ? "" : `<p class="hint">No target set yet — <b>Copy URL</b> / <b>Open</b> will prompt you to fill this in.</p>`}
+      </div>
+    </section>
+    ${g.map((grp) => `<section class="card wide">${payloadBlock(grp)}</section>`).join("")}`;
+}
+
+function payloadCopyText(btn) {
+  const row = btn.closest(".pl-row");
+  const input = row.querySelector(".pl-input");
+  if (input) return input.value;
+  const code = row.querySelector(".pl-code");
+  return code?.dataset.full ?? code?.textContent ?? "";
+}
+
+function rowPayload(row) {
+  const input = row.querySelector(".pl-input");
+  if (input) return input.value;
+  const code = row.querySelector(".pl-code");
+  return code?.dataset.full ?? code?.textContent ?? "";
+}
+
+// Keep each row's "Open ↗" link pointing at the current payload + target, so
+// clicking it is a plain link navigation (never popup-blocked).
+function refreshOpenLink(row) {
+  const a = row.querySelector(".pl-open");
+  if (!a) return;
+  const url = refUrl(rowPayload(row));
+  if (url) { a.href = url; a.classList.remove("disabled"); a.title = url; }
+  else { a.removeAttribute("href"); a.classList.add("disabled"); a.title = "Set a target URL at the top of this tab first"; }
+}
+
+function bindPayloads(v) {
+  const tick = (b, text) => { const t = b.textContent; b.textContent = text; setTimeout(() => (b.textContent = t), 1200); };
+  const refreshAll = () => v.querySelectorAll(".pl-row").forEach(refreshOpenLink);
+  // The target bar (reference only). Stored live; refresh links on every keystroke.
+  const pu = $("#plUrl", v); if (pu) pu.oninput = (e) => { SEC.ub.url = e.target.value; refreshAll(); };
+  const pp = $("#plParam", v); if (pp) pp.oninput = (e) => { SEC.ub.refParam = e.target.value; refreshAll(); };
+  v.querySelectorAll(".pl-copy").forEach((b) => (b.onclick = async () => {
+    try { await navigator.clipboard.writeText(payloadCopyText(b)); tick(b, "Copied"); } catch { tick(b, "Blocked"); }
+  }));
+  v.querySelectorAll(".pl-input").forEach((inp) => (inp.oninput = () => refreshOpenLink(inp.closest(".pl-row"))));
+  v.querySelectorAll(".pl-enc").forEach((b) => (b.onclick = () => {
+    const input = b.closest(".pl-row").querySelector(".pl-input");
+    if (input) { input.value = encodeURIComponent(input.value); refreshOpenLink(b.closest(".pl-row")); }
+  }));
+  v.querySelectorAll(".pl-url").forEach((b) => (b.onclick = async () => {
+    const url = refUrl(payloadCopyText(b));
+    if (!url) return tick(b, "Set URL ↑");
+    try { await navigator.clipboard.writeText(url); tick(b, "Copied URL"); } catch { tick(b, "Blocked"); }
+  }));
+  // Disabled Open link (no target set yet): tell the user instead of doing nothing.
+  v.querySelectorAll(".pl-open").forEach((a) => (a.onclick = (e) => { if (!a.getAttribute("href")) { e.preventDefault(); tick(a, "Set URL ↑"); } }));
+  refreshAll();
+}
+
+// ── Overview, threat model, audit ─────────────────────────────────────────
+const STATUS_LABEL = { found: "Issue found", pass: "Passed", partial: "In progress", untested: "Not tested" };
+const STATUS_SEV = { found: "critical", pass: "pass", partial: "medium", untested: "low" };
+const statusPill = (s) => `<span class="sev-pill ${STATUS_SEV[s]}">${STATUS_LABEL[s]}</span>`;
+
+async function loadStandards() {
+  try { SEC.std = await (await fetch("/api/security/standards")).json(); } catch (e) { SEC.std = { error: e.message }; }
+  renderSecurity();
+}
+
+const TYPE_TAB = { "vuln-scan": "scan", pentest: "checklist", "code-review": "checklist", fuzz: "scan", "threat-model": "threats", audit: "audit", config: "scan" };
+
+function renderOverview() {
+  const s = SEC.std;
+  if (!s) { loadStandards(); return `<p class="hint">Loading…</p>`; }
+  if (s.error) return `<p class="msg bad">${esc(s.error)}</p>`;
+  return `<section class="card wide">
+      <div class="card-head"><h2>Seven kinds of security testing</h2></div>
+      <p class="hint">Where each kind of testing happens on this page, and how far it has got. Scan counts come from the saved reports; manual counts from the checklist.</p>
+    </section>
+    ${s.types.map((t) => {
+      const bits = [];
+      if (t.findings != null) bits.push(`<span class="stat-pill ${t.findings ? "confirmed" : ""}">${t.findings} open finding${t.findings === 1 ? "" : "s"}</span>`);
+      if (t.manual) bits.push(`<span class="stat-pill ${t.manual.failed ? "confirmed" : ""}">${t.manual.done}/${t.manual.total} manual tests done${t.manual.failed ? ` · ${t.manual.failed} failed` : ""}</span>`);
+      if (t.summary) bits.push(`<span class="stat-pill ${t.summary.found ? "confirmed" : ""}">${t.summary.found} with issues · ${t.summary.pass} passed · of ${t.summary.total}</span>`);
+      return `<section class="card">
+        <div class="card-head"><h2>${esc(t.name)}</h2><button class="btn sm" data-gotab="${TYPE_TAB[t.id]}">Open →</button></div>
+        <p class="hint">${esc(t.what)}</p>
+        <p style="color:var(--ink-2);font-size:14px">${esc(t.where)}</p>
+        <div class="sev-row">${bits.join("")}</div>
+      </section>`;
+    }).join("")}`;
+}
+
+function controlRow(c, kind) {
+  const key = `${kind}:${c.id}`;
+  const open = SEC.clOpen.has(key);
+  const risk = c.risk ? (c.risk >= 6 ? ["High risk", "high"] : c.risk >= 3 ? ["Medium risk", "medium"] : ["Low risk", "low"]) : null;
+  return `<article class="finding sev-${STATUS_SEV[c.status]}${open ? " open" : ""}">
+    <div class="finding-head" data-ctl="${esc(key)}" role="button" tabindex="0" aria-expanded="${open}">
+      <span class="sev-dot ${STATUS_SEV[c.status]}"></span>
+      <div class="finding-title">
+        <span class="fid">${esc(c.id)}${c.stride ? ` · ${esc(c.stride)}` : ""}</span>
+        <b>${esc(c.title || c.name)}</b>
+        <div class="finding-sub">${risk ? `<span class="sev-pill ${risk[1]}">${risk[0]} (${c.likelihood}×${c.impact})</span>` : ""}${statusPill(c.status)}
+          <span class="hint">${c.findings.length ? `${c.findings.length} scan finding(s) · ` : ""}${c.done}/${c.total} manual tests</span></div>
+      </div>
+      <svg class="chev" viewBox="0 0 20 20" aria-hidden="true"><path d="M6 8l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    ${open ? `<div class="finding-body">
+      ${c.actor ? `<dl class="kv"><dt>Who</dt><dd>${esc(c.actor)}</dd><dt>Targets</dt><dd>${esc(c.asset)}</dd><dt>Through</dt><dd>${esc(c.entry)}</dd></dl>` : ""}
+      <div class="loc"><b>Scan rules</b> <span class="hint">${(c.rules || []).length ? c.rules.map((r) => `<code>${esc(r)}</code>`).join(" ") : "none: manual only"}</span></div>
+      ${c.findings.length ? `<div class="loc"><b>Open findings</b><ul>${c.findings.map((f) => `<li><span class="sev-pill ${f.severity}">${esc(f.severity)}</span> ${secMd(f.title)} <span class="hint">(${esc(f.report)})</span></li>`).join("")}</ul></div>` : ""}
+      <div class="loc"><b>Manual tests</b><ul>${c.checks.map((k) => `<li>${k.status ? statusPill({ pass: "pass", fail: "found", na: "partial" }[k.status]).replace(/>[^<]+</, `>${{ pass: "Pass", fail: "Fail", na: "N/A" }[k.status]}<`) : `<span class="stat-pill">to do</span>`} <a href="#/security" data-gocheck="${esc(k.id)}">${esc(k.title)}</a></li>`).join("")}</ul></div>
+    </div>` : ""}
+  </article>`;
+}
+
+function renderThreats() {
+  const s = SEC.std;
+  if (!s) { loadStandards(); return `<p class="hint">Loading…</p>`; }
+  const c = (st) => s.threats.filter((t) => t.status === st).length;
+  return `<section class="card wide">
+      <div class="card-head"><h2>Threat model: WP Travel Engine booking site</h2><span class="chip">STRIDE</span></div>
+      <p class="hint">What could go wrong, ranked by risk (likelihood × impact, each 1–3). Each threat is linked to the scan rules and manual tests that check it, and its status updates as you scan and test. Start at the top.</p>
+      <div class="sev-row">${["found", "partial", "pass", "untested"].map((st) => `<span class="sev-pill ${STATUS_SEV[st]}">${c(st)} ${STATUS_LABEL[st]}</span>`).join("")}</div>
+    </section>
+    <section class="card wide"><div class="findings">${s.threats.map((t) => controlRow(t, "t")).join("")}</div></section>`;
+}
+
+function auditMarkdown(s) {
+  const row = (c) => `| ${c.id} | ${c.name} | ${STATUS_LABEL[c.status]} | ${c.findings.length} | ${c.done}/${c.total} |`;
+  const fails = (list) => list.flatMap((c) => [...c.findings.map((f) => `- **${c.id}** ${f.title} (${f.severity}, ${f.report})`), ...c.checks.filter((k) => k.status === "fail").map((k) => `- **${c.id}** Manual test failed: ${k.title}`)]);
+  return [`# Security audit — ${new Date().toISOString().slice(0, 10)}`, "", "## OWASP Top 10 (2021)", "", "| ID | Category | Status | Scan findings | Manual tests |", "| --- | --- | --- | --- | --- |", ...s.owasp.map(row), "",
+    "## PCI DSS 4.0 (payment pages)", "", "| Req | Control | Status | Scan findings | Manual tests |", "| --- | --- | --- | --- | --- |", ...s.pci.map(row), "",
+    "## Issues", "", ...[...new Set([...fails(s.owasp), ...fails(s.pci)])], ""].join("\n");
+}
+
+function renderAudit() {
+  const s = SEC.std;
+  if (!s) { loadStandards(); return `<p class="hint">Loading…</p>`; }
+  const sum = (list) => ["found", "partial", "pass", "untested"].map((st) => `<span class="sev-pill ${STATUS_SEV[st]}">${list.filter((x) => x.status === st).length} ${STATUS_LABEL[st]}</span>`).join("");
+  return `<section class="card wide">
+      <div class="card-head"><h2>Security audit</h2><button class="btn sm" id="auditCopy">Copy audit report</button><span class="msg" id="auditMsg"></span></div>
+      <p class="hint">Each control passes only when every linked manual test passed and no scan finding is open. Run the scans (code + site), work through the manual tests, then copy the report.</p>
+    </section>
+    <section class="card wide"><div class="card-head"><h2>OWASP Top 10 (2021)</h2></div><div class="sev-row">${sum(s.owasp)}</div>
+      <div class="findings">${s.owasp.map((c) => controlRow(c, "o")).join("")}</div></section>
+    <section class="card wide"><div class="card-head"><h2>PCI DSS 4.0: payment pages</h2></div>
+      <p class="hint">The parts a WordPress site using a hosted/iframe gateway is responsible for (roughly SAQ A / A-EP). The gateway covers the rest.</p><div class="sev-row">${sum(s.pci)}</div>
+      <div class="findings">${s.pci.map((c) => controlRow(c, "p")).join("")}</div></section>`;
+}
+
+function bindStandards(v) {
+  v.querySelectorAll("[data-gotab]").forEach((b) => (b.onclick = () => { SEC.tab = b.dataset.gotab; if (SEC.tab !== "scan" && SEC.tab !== "checklist") SEC.std = null; renderSecurity(); }));
+  v.querySelectorAll("[data-ctl]").forEach((h) => (h.onclick = () => { const k = h.dataset.ctl; SEC.clOpen.has(k) ? SEC.clOpen.delete(k) : SEC.clOpen.add(k); renderSecurity(); }));
+  v.querySelectorAll("[data-gocheck]").forEach((a) => (a.onclick = (e) => { e.preventDefault(); SEC.tab = "checklist"; SEC.clFilter = "all"; SEC.clOpen.add(a.dataset.gocheck); renderSecurity(); setTimeout(() => v.querySelector(`[data-cl="${a.dataset.gocheck}"]`)?.scrollIntoView({ block: "center" }), 50); }));
+  const ac = $("#auditCopy", v);
+  if (ac) ac.onclick = async () => { try { await navigator.clipboard.writeText(auditMarkdown(SEC.std)); flash("auditMsg", "Copied as Markdown."); } catch { flash("auditMsg", "Clipboard blocked by the browser.", "bad"); } };
+}
+
+function bindChecklist(v) {
+  v.querySelectorAll("[data-clf]").forEach((b) => (b.onclick = () => { SEC.clFilter = b.dataset.clf; renderSecurity(); }));
+  v.querySelectorAll("[data-cl]").forEach((h) => (h.onclick = () => { const id = h.dataset.cl; SEC.clOpen.has(id) ? SEC.clOpen.delete(id) : SEC.clOpen.add(id); renderSecurity(); }));
+  v.querySelectorAll("[data-cls]").forEach((b) => (b.onclick = async () => { await saveCheck(b.dataset.cls, { status: b.dataset.v }); renderSecurity(); }));
+  v.querySelectorAll("[data-cln]").forEach((t) => (t.onchange = async () => { await saveCheck(t.dataset.cln, { note: t.value }); renderSecurity(); }));
+  v.querySelectorAll("[data-clcopy]").forEach((b) => (b.onclick = async () => {
+    const id = b.dataset.clcopy;
+    const g = SEC.cl.checklist.find((x) => x.items.some((i) => i.id === id));
+    const i = g.items.find((x) => x.id === id);
+    const r = SEC.cl.results[id] || {};
+    const md = `## ${i.title}\n\n**Area:** ${g.area} (${g.owasp}) · **Found by:** manual security test\n\n**Steps to reproduce**\n${i.steps.map((s, k) => `${k + 1}. ${s}`).join("\n")}\n\n**Expected:** ${i.expected}\n\n**Actual:** ${r.note || "(describe what happened)"}\n`;
+    try { await navigator.clipboard.writeText(md); flash(`clm-${id}`, "Copied — paste it into a GitHub issue."); } catch { flash(`clm-${id}`, "Clipboard blocked by the browser.", "bad"); }
+  }));
+}
+
+async function loadSecurity() {
+  try {
+    SEC.data = await (await fetch("/api/security")).json();
+    if (!SEC.form.site) SEC.form.site = SEC.data.site || "";
+    if (!SEC.form.repo && SEC.data.targets[0]) SEC.form.repo = SEC.data.targets[0].value;
+    if (!SEC.name && SEC.data.reports[0]) await openSecReport(SEC.data.reports[0].name, false);
+    if (SEC.data.scanning && !SEC.busy) { SEC.tab = "scan"; pollSecScan(); }
+  } catch (e) { SEC.error = e.message; }
+  renderSecurity();
+}
+
+async function openSecReport(name, render = true) {
+  const body = await (await fetch(`/api/security/report/${encodeURIComponent(name)}`)).json();
+  SEC.name = name; SEC.report = body.ok ? body.report : null; SEC.open.clear(); SEC.sevFilter = null;
+  if (render) renderSecurity();
+}
+
+async function runSecScan() {
+  const f = SEC.form;
+  const repo = f.repo === "__none" ? "" : f.repo === "__other" ? (f.other || "").trim() : f.repo;
+  const site = f.useSite ? f.site.trim() : "";
+  if (!repo && !site) { SEC.error = "Choose code to scan, tick “Probe the site”, or both."; return renderSecurity(); }
+  SEC.busy = true; SEC.error = ""; renderSecurity();
+  try {
+    const login = site && f.useUser ? { user: f.user.trim(), pass: f.pass } : {};
+    const res = await fetch("/api/security/scan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ repo, site, deps: !!(repo && f.deps), fuzz: !!(site && f.fuzz), ...login }) });
+    const body = await res.json();
+    if (!body.ok) throw new Error(body.error);
+    pollSecScan();
+  } catch (e) { SEC.error = e.message; SEC.busy = false; renderSecurity(); }
+}
+
+/** The scan runs on the server; poll until it ends, then open its report. */
+async function pollSecScan() {
+  SEC.busy = true;
+  try {
+    const d = await (await fetch("/api/security")).json();
+    SEC.data = d;
+    if (d.scanning) {
+      SEC.progress = d.scanning.log;
+      if (S.slug === "security" && SEC.tab === "scan") renderSecurity();
+      return setTimeout(pollSecScan, 2500);
+    }
+    SEC.busy = false; SEC.progress = null; SEC.std = null;
+    if (d.last && !d.last.ok) SEC.error = d.last.error;
+    else if (d.last?.name) await openSecReport(d.last.name, false);
+  } catch (e) { SEC.busy = false; SEC.error = e.message; }
+  renderSecurity();
+}
+
+function secWhere(f, meta) {
+  if (f.file) {
+    const label = `<code>${esc(f.file)}:${f.line}</code>`;
+    return meta?.repoUrl ? `<a href="${esc(meta.repoUrl)}/blob/${esc(meta.commit || "main")}/${esc(f.file)}#L${f.line}" target="_blank" rel="noopener">${label}</a>` : label;
+  }
+  return f.url ? `<a href="${esc(f.url)}" target="_blank" rel="noopener"><code>${esc(f.url)}</code></a>` : "";
+}
+
+// Detail text is light markdown (`code`, "- " bullets); render just that.
+const secMd = (t) => esc(t).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\n- /g, "<br>• ").replace(/\n/g, "<br>");
+
+function renderSecFinding(f, meta) {
+  const open = SEC.open.has(f.id);
+  return `<article class="finding sev-${f.severity}${open ? " open" : ""}">
+    <div class="finding-head" data-sid="${esc(f.id)}" role="button" tabindex="0" aria-expanded="${open}">
+      <span class="sev-dot ${f.severity}"></span>
+      <div class="finding-title">
+        <span class="fid">DOC-${esc(f.id)}${f.cwe ? ` · ${esc(f.cwe)}` : ""}</span>
+        <b>${secMd(f.title)}</b>
+        <div class="finding-sub">
+          <span class="sev-pill ${f.severity}">${esc(f.severity)}</span>
+          <span class="stat-pill ${f.status === "new" ? "confirmed" : ""}">${esc(f.status)}</span>
+          <span class="tag">${f.file ? "code" : "site"}</span>
+          <span class="hint">${esc(f.file ? `${f.file}:${f.line}` : (f.url || "").replace(/^https?:\/\/[^/]+/, ""))}</span>
+        </div>
+      </div>
+      <svg class="chev" viewBox="0 0 20 20" aria-hidden="true"><path d="M6 8l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    ${open ? `<div class="finding-body">
+      <div class="loc"><b>Where</b> ${secWhere(f, meta)}</div>
+      ${f.snippet ? `<pre class="snip">${esc(f.snippet)}</pre>` : ""}
+      <p>${secMd(f.detail || "")}</p>
+      ${f.impact ? `<p><b>Impact.</b> ${esc(f.impact)}</p>` : ""}
+      ${f.repro?.length ? `<div class="steps"><b>How to test it</b><ol>${f.repro.map((s) => `<li>${secMd(s)}</li>`).join("")}</ol></div>` : ""}
+      ${f.fix ? `<p class="fix"><b>Suggested fix (for developers).</b> ${secMd(f.fix)}</p>` : ""}
+      <div class="actions">
+        <button class="btn sm" data-copy="${esc(f.id)}">Copy as issue</button>
+        <button class="btn sm danger" data-ignore="${esc(f.id)}" title="Hide this finding now and in later scans">Not a bug</button>
+        <span class="msg" id="sm-${esc(f.id)}"></span>
+      </div>
+    </div>` : ""}
+  </article>`;
+}
+
+function renderSecurity() {
+  if (S.slug !== "security") return;
+  const d = SEC.data, r = SEC.report, f = SEC.form;
+  if (!d) { $("#view").innerHTML = `<p class="hint" style="padding:32px var(--gap)">${SEC.error ? esc(SEC.error) : "Loading…"}</p>`; return; }
+  const counts = r ? Object.fromEntries(SEC_SEV.map((s) => [s, r.findings.filter((x) => x.severity === s).length])) : {};
+  const list = r ? r.findings.filter((x) => !SEC.sevFilter || x.severity === SEC.sevFilter) : [];
+  const m = r?.meta;
+
+  $("#view").innerHTML = `
+    <header class="head">
+      <div>
+        <p class="eyebrow">QA · Security</p>
+        <h1>Security testing</h1>
+        <p class="lede">Find likely security bugs in an add-on’s code and on the QA site, then work through the manual tests. Each finding is a lead: follow “How to test it” on the site, then copy it as an issue.</p>
+      </div>
+    </header>
+    <div class="tabs" role="tablist" style="padding:0 var(--gap)">
+      ${[["overview", "Overview"], ["scan", "Automated scan"], ["checklist", "Manual tests"], ["payloads", "Payloads"], ["threats", "Threat model"], ["audit", "Audit"]]
+        .map(([k, l]) => `<button class="tab" role="tab" data-sectab="${k}" aria-selected="${SEC.tab === k}">${l}</button>`).join("")}
+    </div>
+    <div class="settings">
+    ${SEC.tab === "overview" ? renderOverview() : SEC.tab === "threats" ? renderThreats() : SEC.tab === "audit" ? renderAudit() : SEC.tab === "payloads" ? renderPayloads() : SEC.tab === "checklist" ? renderChecklist() : `
+      <section class="card wide">
+        <div class="card-head"><h2>New scan</h2>${SEC.busy ? `<span class="chip">Scanning…</span>` : ""}</div>
+        <div class="row2">
+          <label class="field">Add-on code
+            <select id="secRepo">
+              ${d.targets.map((t) => `<option value="${esc(t.value)}" ${f.repo === t.value ? "selected" : ""}>${esc(t.label)}</option>`).join("")}
+              <option value="__other" ${f.repo === "__other" ? "selected" : ""}>Other: folder or GitHub URL…</option>
+              <option value="__none" ${f.repo === "__none" ? "selected" : ""}>Don’t scan code</option>
+            </select>
+          </label>
+          ${f.repo === "__other" ? `<label class="field">Folder path or git URL<input id="secOther" value="${esc(f.other || "")}" placeholder="E:/code/wp-travel-engine or https://github.com/…"></label>` : ""}
+          <label class="field">Site<input id="secSite" value="${esc(f.site)}" placeholder="https://your-qa-site" ${f.useSite ? "" : "disabled"}></label>
+        </div>
+        <label class="hint" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="secUseSite" ${f.useSite ? "checked" : ""}> Probe the site too (read-only requests; only for sites you’re allowed to test)</label>
+        ${f.useSite ? `<label class="hint" style="display:flex;gap:8px;align-items:center;padding-left:24px"><input type="checkbox" id="secUseUser" ${f.useUser ? "checked" : ""}> Also test logged in as a low-permission user (Subscriber/customer): checks what they can reach that they shouldn’t</label>
+        ${f.useUser ? `<div class="row2" style="padding-left:24px">
+          <label class="field">Username<input id="secUser" value="${esc(f.user)}" placeholder="${esc(d.envTestUser || "a Subscriber account")}" autocomplete="off"></label>
+          <label class="field">Password<input id="secPass" type="password" value="${esc(f.pass)}" placeholder="${d.envTestUser ? "from .env" : ""}" autocomplete="new-password"></label>
+        </div><p class="hint" style="padding-left:24px">Never use an admin account here. Leave both empty to use SECURITY_TEST_USER / SECURITY_TEST_PASSWORD from .env${d.envTestUser ? ` (set: ${esc(d.envTestUser)})` : " (not set)"}. The password isn’t saved.</p>` : ""}` : ""}
+        ${f.useSite ? `<label class="hint" style="display:flex;gap:8px;align-items:center;padding-left:24px"><input type="checkbox" id="secFuzz" ${f.fuzz ? "checked" : ""}> Fuzz the WP Travel Engine API: hundreds of malformed read requests to find crashes and database errors (QA site only; takes a few minutes)</label>` : ""}
+        ${f.repo !== "__none" ? `<label class="hint" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="secDeps" ${f.deps ? "checked" : ""}> Check the add-on’s libraries for known vulnerabilities (sends package names and versions to osv.dev)</label>` : ""}
+        <div class="actions">
+          <button class="btn primary" id="secRun" ${SEC.busy ? "disabled" : ""}>${SEC.busy ? "Scanning…" : "Scan"}</button>
+          ${SEC.busy ? `<span class="spinner"></span><span class="hint">A site probe takes about a minute; fuzzing a few more. You can leave this page; the scan keeps running.</span>` : ""}
+          <span class="msg bad">${esc(SEC.error)}</span>
+        </div>
+        ${SEC.busy && SEC.progress?.length ? `<pre class="snip" style="margin:0;padding:10px 12px;border-radius:8px;background:var(--term);color:var(--term-ink);font:12px/1.55 var(--mono);white-space:pre-wrap">${esc(SEC.progress.join("\n"))}</pre>` : ""}
+      </section>
+
+      ${d.reports.length ? `<section class="card wide">
+        <div class="card-head"><h2>Reports</h2></div>
+        <div class="seg">${d.reports.map((x) => `<button data-rep="${esc(x.name)}" aria-pressed="${x.name === SEC.name}">${esc(x.name)} <span class="hint">${ago(x.meta.ranAt)}</span></button>`).join("")}</div>
+      </section>` : ""}
+
+      ${r ? `<section class="card wide">
+        <div class="report-bar">
+          <div class="report-meta">
+            <p class="hint">${m.repo ? `Code <code>${esc(m.name)}</code>${m.commit ? ` @ <code>${esc(m.commit)}</code>` : ""} (${m.phpFiles} PHP files)` : ""}${m.repo && m.site ? " · " : ""}${m.site ? `Site ${esc(m.site)}${m.loggedInAs ? ` (also as ${esc(m.loggedInAs)})` : ""}` : ""} · ran ${ago(m.ranAt)}</p>
+            <div class="sev-row">
+              <button class="sev-pill" data-sev="" style="cursor:pointer;border:0" aria-pressed="${!SEC.sevFilter}">All ${r.findings.length}</button>
+              ${SEC_SEV.filter((s) => counts[s]).map((s) => `<button class="sev-pill ${s}" data-sev="${s}" style="cursor:pointer;border:0;${SEC.sevFilter === s ? "outline:2px solid var(--sev)" : ""}">${counts[s]} ${s}</button>`).join("")}
+              <span class="hint">· ${r.findings.filter((x) => x.status === "new").length} new · ${(r.fixed || []).length} fixed since last scan${r.ignored ? ` · ${r.ignored} marked not a bug` : ""}</span>
+            </div>
+          </div>
+        </div>
+        ${list.length ? `<div class="findings">${list.map((x) => renderSecFinding(x, m)).join("")}</div>` : `<p class="hint">No findings${SEC.sevFilter ? " at this severity" : ""}. 🎉</p>`}
+        ${(r.fixed || []).length ? `<details class="heuristics"><summary>Fixed since last scan <span class="hint">(${r.fixed.length})</span></summary>
+          <ul class="ok-list">${r.fixed.map((x) => `<li><s>DOC-${esc(x.id)}</s> ${secMd(x.title)}</li>`).join("")}</ul></details>` : ""}
+      </section>` : ""}`}
+    </div>`;
+
+  const v = $("#view");
+  // Overview / threat model / audit re-read scans + checklist each time they're opened.
+  v.querySelectorAll("[data-sectab]").forEach((b) => (b.onclick = () => { SEC.tab = b.dataset.sectab; if (!["scan", "checklist"].includes(SEC.tab)) SEC.std = null; renderSecurity(); }));
+  if (SEC.tab === "payloads") { bindUrlBuilder(v); return bindPayloads(v); }
+  if (SEC.tab === "checklist") { bindPayloads(v); return bindChecklist(v); }
+  if (SEC.tab !== "scan") return bindStandards(v);
+  const repoSel = $("#secRepo", v);
+  const uu = $("#secUseUser", v); if (uu) uu.onchange = (e) => { f.useUser = e.target.checked; renderSecurity(); };
+  const un = $("#secUser", v); if (un) un.oninput = (e) => { f.user = e.target.value; };
+  const pw = $("#secPass", v); if (pw) pw.oninput = (e) => { f.pass = e.target.value; };
+  const dp = $("#secDeps", v); if (dp) dp.onchange = (e) => { f.deps = e.target.checked; };
+  const fz = $("#secFuzz", v); if (fz) fz.onchange = (e) => { f.fuzz = e.target.checked; };
+  repoSel.onchange = () => { f.repo = repoSel.value; renderSecurity(); };
+  const other = $("#secOther", v); if (other) other.oninput = () => { f.other = other.value; };
+  $("#secSite", v).oninput = (e) => { f.site = e.target.value; };
+  $("#secUseSite", v).onchange = (e) => { f.useSite = e.target.checked; renderSecurity(); };
+  $("#secRun", v).onclick = runSecScan;
+  v.querySelectorAll("[data-rep]").forEach((b) => (b.onclick = () => openSecReport(b.dataset.rep)));
+  v.querySelectorAll("[data-sev]").forEach((b) => (b.onclick = () => { SEC.sevFilter = b.dataset.sev || null; renderSecurity(); }));
+  v.querySelectorAll("[data-sid]").forEach((h) => (h.onclick = () => {
+    const id = h.dataset.sid; SEC.open.has(id) ? SEC.open.delete(id) : SEC.open.add(id); renderSecurity();
+  }));
+  v.querySelectorAll("[data-copy]").forEach((b) => (b.onclick = async () => {
+    const x = r.findings.find((y) => y.id === b.dataset.copy);
+    try { await navigator.clipboard.writeText(x.markdown); flash(`sm-${x.id}`, "Copied — paste it into a GitHub issue."); }
+    catch { flash(`sm-${x.id}`, "Clipboard blocked by the browser.", "bad"); }
+  }));
+  v.querySelectorAll("[data-ignore]").forEach((b) => (b.onclick = async () => {
+    if (!confirm("Mark this as not a bug? It will be hidden in this and later scans.")) return;
+    const body = await (await fetch("/api/security/ignore", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: SEC.name, id: b.dataset.ignore }) })).json();
+    if (body.ok) { SEC.report = body.report; renderSecurity(); }
+  }));
 }
 
 // ── An add-on with no tests ───────────────────────────────────────────────
