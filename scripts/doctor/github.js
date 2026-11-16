@@ -136,13 +136,14 @@ async function findExisting(gh, repo, id) {
  * already exists it's returned instead of creating a duplicate.
  * Returns { number, url, existed }.
  */
-async function fileIssue(finding, meta) {
+async function fileIssue(finding, meta, opts = {}) {
   const gh = await resolveGh();
   if (!gh) throw new Error("GitHub CLI (gh) not found.");
   const cfg = loadConfig();
-  if (!cfg.repo) throw new Error("No target repo set. Configure it in the GitHub panel first.");
+  const repo = opts.repo || cfg.repo; // per-add-on override, else the global target
+  if (!repo) throw new Error("No target repo set. Configure it in the GitHub panel first.");
 
-  const existing = await findExisting(gh, cfg.repo, finding.id);
+  const existing = await findExisting(gh, repo, finding.id);
   if (existing) return { ...existing, existed: true };
 
   const title = issueTitle(finding);
@@ -150,9 +151,9 @@ async function fileIssue(finding, meta) {
   const labelArgs = (cfg.labels || []).flatMap((l) => ["--label", l]);
 
   // Try with labels; if the repo lacks them, gh errors — retry label-free.
-  let r = await run(gh, ["issue", "create", "-R", cfg.repo, "--title", title, "--body-file", "-", ...labelArgs], { input: body });
+  let r = await run(gh, ["issue", "create", "-R", repo, "--title", title, "--body-file", "-", ...labelArgs], { input: body });
   if (!r.ok && /label|not found/i.test(r.stderr)) {
-    r = await run(gh, ["issue", "create", "-R", cfg.repo, "--title", title, "--body-file", "-"], { input: body });
+    r = await run(gh, ["issue", "create", "-R", repo, "--title", title, "--body-file", "-"], { input: body });
   }
   if (!r.ok) throw new Error(r.stderr.split("\n").filter(Boolean).slice(-1)[0] || "gh issue create failed");
 

@@ -944,6 +944,7 @@ function renderReport(panel, d) {
       </div>
       <button class="btn go" id="scanBtn"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1v10M1 6h10"/></svg>Re-scan repo</button>
     </div>
+    ${r.bugRepo ? `<p class="hint">Issues file to <a href="https://github.com/${esc(r.bugRepo)}/issues" target="_blank" rel="noopener"><code>${esc(r.bugRepo)}</code></a>${GHS && GHS.authed ? ` · as <b>${esc(GHS.account || "?")}</b>` : " · <b>restart npm run ui</b> to enable filing"}.</p>` : ""}
     ${r.intro ? `<p class="report-intro">${esc(r.intro)}</p>` : ""}
     <div class="findings">
       ${findings.map((f) => renderFinding(f, repoUrl, r.commit, slug)).join("")}
@@ -1015,7 +1016,7 @@ function renderFinding(f, repoUrl, commit, slug) {
       ${f.fix ? `<p class="fix"><b>Fix.</b> ${esc(f.fix)}</p>` : ""}
       <div class="actions">
         ${f.issue ? `<a class="btn sm" href="${esc(f.issue.url)}" target="_blank" rel="noopener">Filed #${f.issue.number} ↗</a>`
-          : `<button class="btn sm" data-reportfile="${esc(f.id)}" ${GHS && GHS.repoOk ? "" : `disabled title="${esc(GHS && GHS.repo ? GHS.message || "Can't file to " + GHS.repo : "Set a writable repo in Security → Automated scan → File issues to GitHub")}"`}>File issue</button>`}
+          : `<button class="btn sm" data-reportfile="${esc(f.id)}" ${GHS && GHS.installed && GHS.authed ? "" : `disabled title="${esc(!GHS || !GHS.installed ? "GitHub CLI (gh) not found" : "gh not logged in — restart npm run ui after setting GH_TOKEN in .env")}"`}>File issue</button>`}
         <span class="msg" id="rm-${esc(f.id)}"></span>
       </div>
     </div>` : ""}

@@ -27,6 +27,9 @@ const ADDONS = [
     bookings: "data/addons/wptravelengine-accommodation/bookings.json",
     // Source repo the QA Report tab reads and re-scans.
     repo: "https://github.com/Codewing-Solutions/wptravelengine-accommodation.git",
+    // Where the "File issue" button files this add-on's findings (each add-on
+    // has its own repo). Falls back to the global target in data/doctor/github.json.
+    bugRepo: "Codewing-Solutions/wptravelengine-accommodation",
     report: "data/addons/wptravelengine-accommodation/qa-report.json",
     // Env var the spec reads to delete what it built when the run ends.
     cleanupEnv: "ACCOMMODATION_CLEANUP",

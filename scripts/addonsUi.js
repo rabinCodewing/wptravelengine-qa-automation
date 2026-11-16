@@ -415,7 +415,9 @@ const server = http.createServer(async (req, res) => {
       if (!addon.report) return sendJson(res, 404, { ok: false, error: "No QA report for this add-on yet." });
       // POST re-scans the repo (git pull + re-locate); GET returns what's on disk.
       const doScan = req.method === "POST";
-      return sendJson(res, 200, { ok: true, report: await buildReport(addon, { doScan }) });
+      const report = await buildReport(addon, { doScan });
+      report.bugRepo = addon.bugRepo || github.loadConfig().repo || "";
+      return sendJson(res, 200, { ok: true, report });
     }
     // File one QA-Report finding as a GitHub issue.
     const reportFileMatch = p.match(/^\/api\/report\/([a-z0-9-]+)\/file-issue$/);
@@ -441,7 +443,7 @@ const server = http.createServer(async (req, res) => {
           repro: f.steps,
           fix: f.fix,
         };
-        const issue = await github.fileIssue(normalized, { name: addon.name, repo: report.repoUrl || report.repo, commit: report.commit });
+        const issue = await github.fileIssue(normalized, { name: addon.name, repo: report.repoUrl || report.repo, commit: report.commit }, { repo: addon.bugRepo });
         // Record the issue back onto the curated qa-report.json so the card shows "Filed #n".
         const reportPath = path.join(ROOT, addon.report);
         try {
