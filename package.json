@@ -1,23 +1,17 @@
 {
   "name": "wpte-test-automation",
   "version": "1.0.0",
-  "description": "Playwright automation for PayLexer payment gateways on WP Travel Engine: PayLexer dashboard, PayLexer WordPress plugin, WPTE gateway settings, currency and checkout.",
+  "description": "Playwright QA automation and security testing for WP Travel Engine: add-on suites (Accommodation), the WPTE Doctor security scanner, and the add-on runner UI.",
   "private": true,
   "type": "commonjs",
   "scripts": {
     "setup": "npm install && npx playwright install firefox",
     "auth": "playwright test tests/login.setup.js --project=setup",
-    "test": "playwright test tests/wpGatewayCheckout.spec.js --project=firefox",
-    "test:wp": "playwright test tests/wpGatewayCheckout.spec.js --project=firefox",
-    "test:gateway": "playwright test tests/paymentGateway.spec.js --project=firefox",
-    "test:login": "playwright test tests/login.spec.js --project=firefox",
-    "test:all": "node scripts/runGateways.js",
-    "gateways": "node scripts/runGateways.js --list",
-    "report": "playwright show-report",
     "test:accommodation": "playwright test tests/accommodation.spec.js --project=firefox",
-    "ui:accommodation": "node scripts/addonsUi.js",
     "ui": "node scripts/addonsUi.js",
-    "doctor": "node scripts/doctor.js"
+    "ui:accommodation": "node scripts/addonsUi.js",
+    "doctor": "node scripts/doctor.js",
+    "report": "playwright show-report"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",

@@ -2,8 +2,8 @@ require("dotenv").config({ quiet: true });
 const fs = require("fs");
 const { defineConfig, devices } = require("@playwright/test");
 
-// The authenticated session written by tests/login.setup.js (PayLexer
-// dashboard + WordPress admin, in one file). Loading it as the default
+// The authenticated WordPress session written by tests/login.setup.js.
+// Loading it as the default
 // storageState is what lets every spec open the dashboard / wp-admin directly
 // instead of logging in again.
 //
@@ -31,7 +31,7 @@ module.exports = defineConfig({
   ],
 
   use: {
-    baseURL: process.env.BASE_URL,
+    baseURL: process.env.FRONTEND_URL || process.env.BASE_URL,
     storageState,
     // Headed by default — these runs are watched. PW_HEADLESS=1 for headless
     // (use it when the desktop is in use: a headed Firefox that loses OS focus

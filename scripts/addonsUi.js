@@ -35,6 +35,7 @@ const { evaluate: evaluateStandards } = require("./doctor/standards");
 const { PAYLOADS } = require("./doctor/payloads");
 const { buildUrlPayloads } = require("./doctor/urlBuilder");
 const { buildPlan: buildRequestPlan } = require("./doctor/requestBuilder");
+const github = require("./doctor/github");
 let doctorScan = null; // the security scan in progress, if any (one at a time)
 let doctorLast = null; // how the last scan ended: { ok, name } or { ok: false, error }
 const slack = require("./slackNotify");
@@ -333,7 +334,6 @@ function settingsState() {
         secretKeySet: Boolean(env.STRIPE_SECRET_KEY),
         mode: /^pk_live_/.test(env.STRIPE_PUBLISHABLE_KEY || "") ? "live" : env.STRIPE_PUBLISHABLE_KEY ? "test" : null,
       },
-      paylexerSkipped: env.SKIP_PAYLEXER === "1",
     },
   };
 }
@@ -417,6 +417,46 @@ const server = http.createServer(async (req, res) => {
       const doScan = req.method === "POST";
       return sendJson(res, 200, { ok: true, report: await buildReport(addon, { doScan }) });
     }
+    // File one QA-Report finding as a GitHub issue.
+    const reportFileMatch = p.match(/^\/api\/report\/([a-z0-9-]+)\/file-issue$/);
+    if (req.method === "POST" && reportFileMatch) {
+      const addon = findAddon(reportFileMatch[1]);
+      if (!addon || !addon.report) return sendJson(res, 404, { ok: false, error: "Unknown add-on or no QA report." });
+      const { id } = await readBody(req);
+      try {
+        const report = await buildReport(addon, { doScan: false });
+        const f = (report.findings || []).find((x) => x.id === id);
+        if (!f) return sendJson(res, 404, { ok: false, error: "Finding not found." });
+        const loc = f.matchedAt || (f.location || [])[0] || {};
+        const normalized = {
+          id: f.id,
+          severity: f.severity,
+          rule: f.category || "qa",
+          title: f.title,
+          file: loc.file || null,
+          line: loc.line || null,
+          cwe: f.cwe || "",
+          detail: [f.evidence ? `Evidence: ${f.evidence}` : "", loc.note ? `Note: ${loc.note}` : ""].filter(Boolean).join("\n"),
+          impact: f.impact,
+          repro: f.steps,
+          fix: f.fix,
+        };
+        const issue = await github.fileIssue(normalized, { name: addon.name, repo: report.repoUrl || report.repo, commit: report.commit });
+        // Record the issue back onto the curated qa-report.json so the card shows "Filed #n".
+        const reportPath = path.join(ROOT, addon.report);
+        try {
+          const saved = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+          const sf = (saved.findings || []).find((x) => x.id === id);
+          if (sf) {
+            sf.issue = { number: issue.number, url: issue.url };
+            fs.writeFileSync(reportPath, JSON.stringify(saved, null, 2));
+          }
+        } catch {}
+        return sendJson(res, 200, { ok: true, issue, report: await buildReport(addon, { doScan: false }) });
+      } catch (error) {
+        return sendJson(res, 400, { ok: false, error: error.message });
+      }
+    }
     // ── Security page (WPTE Doctor) ──
     if (req.method === "GET" && p === "/api/security") {
       const targets = ADDONS.filter((a) => fs.existsSync(path.join(addonDir(a.slug), "repo"))).map((a) => ({ value: a.slug, label: a.name }));
@@ -447,6 +487,27 @@ const server = http.createServer(async (req, res) => {
     // Detection payloads reference.
     if (req.method === "GET" && p === "/api/security/payloads") {
       return sendJson(res, 200, { ok: true, payloads: PAYLOADS });
+    }
+    // GitHub issue filing: status/config + one-click file a finding.
+    if (req.method === "GET" && p === "/api/security/github") {
+      return sendJson(res, 200, { ok: true, ...(await github.status()) });
+    }
+    if (req.method === "PUT" && p === "/api/security/github") {
+      const { repo, labels } = await readBody(req);
+      github.saveConfig({ repo: repo ?? "", ...(labels ? { labels } : {}) });
+      return sendJson(res, 200, { ok: true, ...(await github.status()) });
+    }
+    if (req.method === "POST" && p === "/api/security/file-issue") {
+      const { name, id } = await readBody(req);
+      const report = doctor.readReport(name);
+      const finding = report?.findings.find((f) => f.id === id);
+      if (!finding) return sendJson(res, 404, { ok: false, error: "Finding not found." });
+      try {
+        const issue = await github.fileIssue(finding, report.meta);
+        return sendJson(res, 200, { ok: true, issue, report: doctor.recordIssue(name, id, issue) });
+      } catch (error) {
+        return sendJson(res, 400, { ok: false, error: error.message });
+      }
     }
     // Payload URL builder: target URL → clickable payload URLs + curl.
     if (req.method === "POST" && p === "/api/security/build-url") {

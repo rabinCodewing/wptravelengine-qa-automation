@@ -11,8 +11,7 @@
 
 /**
  * Registered on the page's context, so it applies to every page the run opens
- * — the WordPress tab, the PayLexer tab, gateway popups — and survives every
- * navigation.
+ * — the WordPress tab, checkout popups — and survives every navigation.
  */
 async function installSmoothScroll(page) {
   if (process.env.PW_SMOOTH_SCROLL === "0") return;

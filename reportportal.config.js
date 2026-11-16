@@ -24,39 +24,24 @@ function normaliseEndpoint(raw) {
 // Priority:
 //   1. RP_LAUNCH_TITLE — full override for one run, e.g.
 //        RP_LAUNCH_TITLE="Omise card checkout" npx playwright test
-//   2. RP_LAUNCH (base) + the gateway (and platform) from the same env vars the
-//      tests already read, so a normal run reads e.g.
-//        "PayLexer Playwright Automation — Safepay (woocommerce)"
-//      scripts/runBothPlatforms.js sets PAYMENT_GATEWAY/CURRENCY_PLATFORM per
-//      child process, so each platform's launch is named for its own platform.
+//   2. RP_LAUNCH (base), else a default name.
 function buildLaunchName() {
-  if (process.env.RP_LAUNCH_TITLE) return process.env.RP_LAUNCH_TITLE;
-
-  const base = process.env.RP_LAUNCH || "PayLexer Playwright Automation";
-  const gateway = process.env.PAYMENT_GATEWAY;
-  const platform = process.env.CURRENCY_PLATFORM;
-
-  if (!gateway) return base;
-  return platform ? `${base} — ${gateway} (${platform})` : `${base} — ${gateway}`;
+  return process.env.RP_LAUNCH_TITLE || process.env.RP_LAUNCH || "WP Travel Engine QA Automation";
 }
 
 const rpConfig = {
   apiKey: process.env.RP_API_KEY,
   endpoint: normaliseEndpoint(process.env.RP_ENDPOINT),
-  project: process.env.RP_PROJECT || "paylexer-playwright",
+  project: process.env.RP_PROJECT || "wptravelengine-qa",
   launch: buildLaunchName(),
 
   // Launch attributes and description — searchable metadata on the launch in
-  // the ReportPortal UI, mirroring the run context the launch is tagged with.
+  // the ReportPortal UI.
   attributes: [
-    { key: "gateway", value: process.env.PAYMENT_GATEWAY || "unset" },
-    { key: "platform", value: process.env.CURRENCY_PLATFORM || "unset" },
     { key: "headless", value: process.env.PW_HEADLESS === "1" ? "yes" : "no" },
     { key: "framework", value: "playwright" },
   ],
-  description: process.env.PAYMENT_GATEWAY
-    ? `PayLexer automation for **${process.env.PAYMENT_GATEWAY}**${process.env.CURRENCY_PLATFORM ? ` on ${process.env.CURRENCY_PLATFORM}` : ""} — login → configure gateway → verify connection.`
-    : "PayLexer payment-gateway automation — login → configure gateway → verify connection.",
+  description: "WP Travel Engine QA automation — add-on suites and security testing.",
 
   // Attach Playwright artifacts automatically. Screenshots captured by the
   // `screenshot: "only-on-failure"` setting in playwright.config.js arrive as

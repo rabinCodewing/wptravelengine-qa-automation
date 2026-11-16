@@ -1,7 +1,6 @@
 // scripts/slackNotify.js
 //
 // Posts add-on test results to Slack, for the add-on QA runner (scripts/addonsUi.js).
-// Modelled on the PayLexer automation's scripts/slackReport.js.
 //
 //   automatically   when a run finishes, per the Settings page's "Send
 //                   automatically" choice: every run, failures only, only when

@@ -300,7 +300,17 @@ function repoWebUrl(dir) {
   }
 }
 
-module.exports = { runDoctor, listReports, readReport, ignoreFinding, SEVERITIES };
+/** Records a filed GitHub issue onto a finding in a saved report. */
+function recordIssue(name, id, issue) {
+  const file = path.join(DOCTOR_DIR, safeName(name), "report.json");
+  const r = JSON.parse(fs.readFileSync(file, "utf8"));
+  const f = r.findings.find((x) => x.id === id);
+  if (f) f.issue = { number: issue.number, url: issue.url };
+  fs.writeFileSync(file, JSON.stringify(r, null, 2));
+  return readReport(name);
+}
+
+module.exports = { runDoctor, listReports, readReport, ignoreFinding, recordIssue, SEVERITIES };
 
 if (require.main === module) {
   main().catch((error) => {

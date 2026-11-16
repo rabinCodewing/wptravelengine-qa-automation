@@ -13,12 +13,59 @@
 // Thank You page: "Booking ID: <n>".
 
 const { expect } = require("@playwright/test");
-const CheckoutPage = require("./CheckoutPage");
 
 class WpteStripeCheckoutPage {
   constructor(page) {
     this.page = page;
     this.payButton = page.locator("#wte-stripe-payment-button");
+  }
+
+  /** Ticks WP Travel Engine's Terms & Conditions checkbox (several fallbacks). */
+  async checkTermsAndConditions() {
+    const termsCheckbox = this.page.locator('input[name="wp_travel_engine_booking_setting[terms_conditions][]"]');
+    await termsCheckbox.waitFor({ state: "visible", timeout: 30000 });
+    if (await termsCheckbox.isChecked()) return;
+    await termsCheckbox.evaluate((el) => el.scrollIntoView({ block: "center", inline: "nearest" }));
+    const checkboxId = await termsCheckbox.getAttribute("id");
+    const attempts = [
+      async () => {
+        if (!checkboxId) return false;
+        const label = this.page.locator(`label[for="${checkboxId}"]`);
+        if (!(await label.count())) return false;
+        await label.first().click({ force: true });
+        return true;
+      },
+      async () => {
+        const wrap = termsCheckbox.locator("xpath=ancestor::*[contains(@class,'wpte-bf-checkbox-wrap') or contains(@class,'wpte-checkbox-wrap')][1]");
+        if (!(await wrap.count())) return false;
+        await wrap.first().click({ force: true });
+        return true;
+      },
+      async () => {
+        await termsCheckbox.check({ force: true });
+        return true;
+      },
+      async () => {
+        await termsCheckbox.evaluate((el) => {
+          el.checked = true;
+          el.dispatchEvent(new Event("input", { bubbles: true }));
+          el.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+        return true;
+      },
+    ];
+    for (const run of attempts) {
+      let ran = false;
+      try {
+        ran = await run();
+      } catch {
+        continue;
+      }
+      if (!ran) continue;
+      await this.page.waitForTimeout(300);
+      if (await termsCheckbox.isChecked()) return;
+    }
+    throw new Error("Could not check the Terms & Conditions checkbox — tried the label, the wrapper, a forced check(), and setting .checked directly.");
   }
 
   async fillBilling() {
@@ -75,7 +122,7 @@ class WpteStripeCheckoutPage {
     const billing = await this.fillBilling();
     await this.selectStripe();
     await this.fillCard(card);
-    await new CheckoutPage(this.page).checkTermsAndConditions();
+    await this.checkTermsAndConditions();
     await this.payButton.evaluate((el) => el.scrollIntoView({ block: "center" }));
     await this.payButton.click();
 

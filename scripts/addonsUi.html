@@ -923,6 +923,7 @@ function renderReport(panel, d) {
   panel.onclick = panel.onchange = null;
 
   if (!r && !S.scanning) { loadReport(slug); panel.innerHTML = `<p class="hint">Reading the QA report…</p>`; return; }
+  if (GHS === null) { ensureGithub(() => { if (S.tab === "report") renderPanel(); }); }
   if (S.scanning) { panel.innerHTML = `<div class="scan-busy"><span class="spinner"></span> Looking into the repository — cloning, pulling latest and re-locating each finding in the source…</div>`; return; }
   if (r.error) { panel.innerHTML = `<div class="blank"><h2>No report</h2><p>${esc(r.error)}</p></div>`; return; }
 
@@ -945,7 +946,7 @@ function renderReport(panel, d) {
     </div>
     ${r.intro ? `<p class="report-intro">${esc(r.intro)}</p>` : ""}
     <div class="findings">
-      ${findings.map((f) => renderFinding(f, repoUrl, r.commit)).join("")}
+      ${findings.map((f) => renderFinding(f, repoUrl, r.commit, slug)).join("")}
     </div>
     ${scan?.heuristics?.length ? `<details class="heuristics"><summary>Repo-wide pattern scan <span class="hint">(${scan.heuristics.reduce((n, h) => n + h.count, 0)} matches across the source)</span></summary>
       ${scan.heuristics.map((h) => `<div class="heur"><b>${esc(h.label)}</b> <span class="n">${h.count}</span>
@@ -961,9 +962,32 @@ function renderReport(panel, d) {
   }));
   const sb = panel.querySelector("#scanBtn");
   if (sb) sb.onclick = () => loadReport(slug, { scan: true });
+  panel.querySelectorAll("[data-reportfile]").forEach((b) => (b.onclick = () => fileReportIssue(slug, b.dataset.reportfile)));
 }
 
-function renderFinding(f, repoUrl, commit) {
+// Shared GitHub-filing status (used by both the Security tab and the QA Report tab).
+let GHS = null;
+async function ensureGithub(then) {
+  try { GHS = await (await fetch("/api/security/github")).json(); } catch { GHS = {}; }
+  if (then) then();
+  return GHS;
+}
+async function fileReportIssue(slug, id) {
+  const btn = document.querySelector(`[data-reportfile="${id}"]`);
+  if (btn) { btn.disabled = true; btn.textContent = "Filing…"; }
+  try {
+    const r = await (await fetch(`/api/report/${slug}/file-issue`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) })).json();
+    if (!r.ok) throw new Error(r.error);
+    S.report[slug] = r.report;
+    renderPanel();
+    flash(`rm-${id}`, r.issue.existed ? `Already filed — #${r.issue.number}` : `Filed #${r.issue.number}`);
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = "File issue"; }
+    flash(`rm-${id}`, e.message, "bad");
+  }
+}
+
+function renderFinding(f, repoUrl, commit, slug) {
   const open = S.reportOpen.has(f.id);
   const present = f.present === true ? `<span class="present yes" title="Still matched in the current source">in source</span>`
     : f.present === false ? `<span class="present no" title="Pattern no longer matched — may be fixed">not found</span>` : "";
@@ -989,6 +1013,11 @@ function renderFinding(f, repoUrl, commit) {
       ${(loc && loc.length) ? `<div class="loc"><b>Where</b><ul>${loc.map((l) => `<li>${ghLink(repoUrl, l, commit)}${l.note ? ` — <span class="hint">${esc(l.note)}</span>` : ""}</li>`).join("")}</ul></div>` : ""}
       ${f.steps?.length ? `<div class="steps"><b>Steps to reproduce</b><ol>${f.steps.map((s) => `<li>${esc(s)}</li>`).join("")}</ol></div>` : ""}
       ${f.fix ? `<p class="fix"><b>Fix.</b> ${esc(f.fix)}</p>` : ""}
+      <div class="actions">
+        ${f.issue ? `<a class="btn sm" href="${esc(f.issue.url)}" target="_blank" rel="noopener">Filed #${f.issue.number} ↗</a>`
+          : `<button class="btn sm" data-reportfile="${esc(f.id)}" ${GHS && GHS.repoOk ? "" : `disabled title="${esc(GHS && GHS.repo ? GHS.message || "Can't file to " + GHS.repo : "Set a writable repo in Security → Automated scan → File issues to GitHub")}"`}>File issue</button>`}
+        <span class="msg" id="rm-${esc(f.id)}"></span>
+      </div>
     </div>` : ""}
   </article>`;
 }
@@ -998,7 +1027,7 @@ function renderFinding(f, repoUrl, commit) {
 // findings as ready-to-file issues. Backed by scripts/doctor.js.
 const SEC_SEV = ["critical", "high", "medium", "low", "info"];
 const SEC = { data: null, report: null, name: null, open: new Set(), busy: false, error: "", sevFilter: null,
-  tab: "overview", cl: null, clOpen: new Set(), clFilter: "all", std: null, pl: null,
+  tab: "overview", cl: null, clOpen: new Set(), clFilter: "all", std: null, pl: null, gh: null, ghMsg: "",
   ub: { request: "", url: "", refParam: "", params: "", classes: new Set(), result: null, error: "", busy: false },
   form: { repo: "", site: "", useSite: false, deps: false, fuzz: false, useUser: false, user: "", pass: "" } };
 
@@ -1390,6 +1419,7 @@ async function loadSecurity() {
     if (!SEC.form.repo && SEC.data.targets[0]) SEC.form.repo = SEC.data.targets[0].value;
     if (!SEC.name && SEC.data.reports[0]) await openSecReport(SEC.data.reports[0].name, false);
     if (SEC.data.scanning && !SEC.busy) { SEC.tab = "scan"; pollSecScan(); }
+    if (!SEC.gh) loadGithub();
   } catch (e) { SEC.error = e.message; }
   renderSecurity();
 }
@@ -1469,12 +1499,59 @@ function renderSecFinding(f, meta) {
       ${f.repro?.length ? `<div class="steps"><b>How to test it</b><ol>${f.repro.map((s) => `<li>${secMd(s)}</li>`).join("")}</ol></div>` : ""}
       ${f.fix ? `<p class="fix"><b>Suggested fix (for developers).</b> ${secMd(f.fix)}</p>` : ""}
       <div class="actions">
+        ${f.issue ? `<a class="btn sm" href="${esc(f.issue.url)}" target="_blank" rel="noopener">Filed #${f.issue.number} ↗</a>` : `<button class="btn sm" data-file="${esc(f.id)}" ${SEC.gh && SEC.gh.repoOk ? "" : "disabled title='Set a writable repo in the GitHub panel on the Automated scan tab'"}>File issue</button>`}
         <button class="btn sm" data-copy="${esc(f.id)}">Copy as issue</button>
         <button class="btn sm danger" data-ignore="${esc(f.id)}" title="Hide this finding now and in later scans">Not a bug</button>
         <span class="msg" id="sm-${esc(f.id)}"></span>
       </div>
     </div>` : ""}
   </article>`;
+}
+
+// ── GitHub issue filing ─────────────────────────────────────────────────────
+async function loadGithub() {
+  try { SEC.gh = await (await fetch("/api/security/github")).json(); } catch (e) { SEC.gh = { ok: false, error: e.message }; }
+  if (S.slug === "security") renderSecurity();
+}
+async function saveGithub(repo) {
+  SEC.gh = { ...(SEC.gh || {}), saving: true }; renderSecurity();
+  try { SEC.gh = await (await fetch("/api/security/github", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ repo }) })).json(); }
+  catch (e) { SEC.gh = { ok: false, error: e.message }; }
+  renderSecurity();
+}
+function renderGithubCard() {
+  const g = SEC.gh;
+  if (!g) return `<section class="card wide"><div class="card-head"><h2>File issues to GitHub</h2></div><p class="hint">Checking GitHub CLI…</p></section>`;
+  const state = !g.installed ? `<span class="chip bad">gh not found</span>`
+    : !g.authed ? `<span class="chip bad">gh not logged in</span>`
+    : !g.repo ? `<span class="chip">no repo set</span>`
+    : g.repoOk ? `<span class="chip ok">ready → ${esc(g.repo)}</span>`
+    : `<span class="chip bad">${esc(g.repo)}: can't file</span>`;
+  return `<section class="card wide">
+    <div class="card-head"><h2>File issues to GitHub</h2>${state}</div>
+    <p class="hint">${g.installed ? (g.authed ? `Signed in as <b>${esc(g.account || "?")}</b>. ` : "GitHub CLI found but not logged in — run <code>gh auth login</code>. ") : "Install GitHub CLI (or set <code>GH_PATH</code>) to file issues. "}Set the repo findings should be filed to, then use <b>File issue</b> on any finding.</p>
+    <div class="row2">
+      <label class="field">Target repo (owner/name)<input id="ghRepo" value="${esc(g.repo || "")}" placeholder="Rabinhaha/WPTE-test-Automation" spellcheck="false" autocomplete="off"></label>
+      <div class="field">&nbsp;<div class="actions"><button class="btn primary sm" id="ghSave" ${g.saving ? "disabled" : ""}>${g.saving ? "Checking…" : "Save & verify"}</button></div></div>
+    </div>
+    ${g.repo && g.message ? `<p class="msg ${g.repoOk ? "ok" : "bad"}">${esc(g.message)}</p>` : ""}
+    ${g.error ? `<p class="msg bad">${esc(g.error)}</p>` : ""}
+    <p class="hint">Each issue carries the full finding (severity, file:line, impact, steps, fix) and a stable <code>DOC-id</code>, so re-filing the same finding links the existing issue instead of duplicating it.</p>
+  </section>`;
+}
+async function fileIssue(id) {
+  const btn = document.querySelector(`[data-file="${id}"]`);
+  if (btn) { btn.disabled = true; btn.textContent = "Filing…"; }
+  try {
+    const r = await (await fetch("/api/security/file-issue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: SEC.name, id }) })).json();
+    if (!r.ok) throw new Error(r.error);
+    SEC.report = r.report;
+    flash(`sm-${id}`, r.issue.existed ? `Already filed — #${r.issue.number}` : `Filed #${r.issue.number}`);
+    renderSecurity();
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = "File issue"; }
+    flash(`sm-${id}`, e.message, "bad");
+  }
 }
 
 function renderSecurity() {
@@ -1528,6 +1605,8 @@ function renderSecurity() {
         ${SEC.busy && SEC.progress?.length ? `<pre class="snip" style="margin:0;padding:10px 12px;border-radius:8px;background:var(--term);color:var(--term-ink);font:12px/1.55 var(--mono);white-space:pre-wrap">${esc(SEC.progress.join("\n"))}</pre>` : ""}
       </section>
 
+      ${renderGithubCard()}
+
       ${d.reports.length ? `<section class="card wide">
         <div class="card-head"><h2>Reports</h2></div>
         <div class="seg">${d.reports.map((x) => `<button data-rep="${esc(x.name)}" aria-pressed="${x.name === SEC.name}">${esc(x.name)} <span class="hint">${ago(x.meta.ranAt)}</span></button>`).join("")}</div>
@@ -1567,6 +1646,9 @@ function renderSecurity() {
   $("#secSite", v).oninput = (e) => { f.site = e.target.value; };
   $("#secUseSite", v).onchange = (e) => { f.useSite = e.target.checked; renderSecurity(); };
   $("#secRun", v).onclick = runSecScan;
+  const ghRepo = $("#ghRepo", v), ghSave = $("#ghSave", v);
+  if (ghSave) ghSave.onclick = () => saveGithub((ghRepo?.value || "").trim());
+  v.querySelectorAll("[data-file]").forEach((b) => (b.onclick = () => fileIssue(b.dataset.file)));
   v.querySelectorAll("[data-rep]").forEach((b) => (b.onclick = () => openSecReport(b.dataset.rep)));
   v.querySelectorAll("[data-sev]").forEach((b) => (b.onclick = () => { SEC.sevFilter = b.dataset.sev || null; renderSecurity(); }));
   v.querySelectorAll("[data-sid]").forEach((h) => (h.onclick = () => {
@@ -1738,7 +1820,6 @@ function renderSettings() {
           <dt>wp-admin login</dt><dd><code>${esc(site.username || "—")}</code> · password ${site.passwordSet ? "set" : "<b>not set</b>"}</dd>
           <dt>Login URL</dt><dd><code>${esc(site.loginUrl || "—")}</code></dd>
           <dt>Stripe keys</dt><dd>${site.stripe.publishableKey ? `publishable <code>${esc(site.stripe.publishableKey)}</code> · secret ${site.stripe.secretKeySet ? "set" : "<b>not set</b>"}` : "not set"}</dd>
-          <dt>PayLexer</dt><dd>${site.paylexerSkipped ? "Skipped (<code>SKIP_PAYLEXER=1</code>): sessions sign in to WordPress only" : "Signed in as well during <code>npm run auth</code>"}</dd>
         </dl>
         <p class="hint">Read from <code>.env</code>. Change them there and restart <code>npm run ui</code>. Stripe keys must be test keys: the Stripe checkout tests refuse live ones.</p>
       </section>
