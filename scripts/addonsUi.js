@@ -505,7 +505,11 @@ const server = http.createServer(async (req, res) => {
       const finding = report?.findings.find((f) => f.id === id);
       if (!finding) return sendJson(res, 404, { ok: false, error: "Finding not found." });
       try {
-        const issue = await github.fileIssue(finding, report.meta);
+        // Route by add-on: a code scan's meta.name is the add-on slug/name, so
+        // its findings file to that add-on's own repo (bugRepo). Site scans
+        // (no matching add-on) fall back to the global target.
+        const addon = ADDONS.find((a) => a.slug === report.meta.name || a.name === report.meta.name);
+        const issue = await github.fileIssue(finding, report.meta, { repo: addon?.bugRepo });
         return sendJson(res, 200, { ok: true, issue, report: doctor.recordIssue(name, id, issue) });
       } catch (error) {
         return sendJson(res, 400, { ok: false, error: error.message });
@@ -546,7 +550,11 @@ const server = http.createServer(async (req, res) => {
     const secMatch = p.match(/^\/api\/security\/report\/([\w.+-]+)$/);
     if (req.method === "GET" && secMatch) {
       const report = doctor.readReport(secMatch[1]);
-      return report ? sendJson(res, 200, { ok: true, report }) : sendJson(res, 404, { ok: false, error: "No such report." });
+      if (!report) return sendJson(res, 404, { ok: false, error: "No such report." });
+      // The repo this report's findings file to (add-on's bugRepo, else global).
+      const addon = ADDONS.find((a) => a.slug === report.meta.name || a.name === report.meta.name);
+      report.bugRepo = addon?.bugRepo || github.loadConfig().repo || "";
+      return sendJson(res, 200, { ok: true, report });
     }
     if (req.method === "POST" && p === "/api/security/scan") {
       if (doctorScan) return sendJson(res, 409, { ok: false, error: "A scan is already running." });

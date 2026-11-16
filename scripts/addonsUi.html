@@ -1500,7 +1500,7 @@ function renderSecFinding(f, meta) {
       ${f.repro?.length ? `<div class="steps"><b>How to test it</b><ol>${f.repro.map((s) => `<li>${secMd(s)}</li>`).join("")}</ol></div>` : ""}
       ${f.fix ? `<p class="fix"><b>Suggested fix (for developers).</b> ${secMd(f.fix)}</p>` : ""}
       <div class="actions">
-        ${f.issue ? `<a class="btn sm" href="${esc(f.issue.url)}" target="_blank" rel="noopener">Filed #${f.issue.number} ↗</a>` : `<button class="btn sm" data-file="${esc(f.id)}" ${SEC.gh && SEC.gh.repoOk ? "" : "disabled title='Set a writable repo in the GitHub panel on the Automated scan tab'"}>File issue</button>`}
+        ${f.issue ? `<a class="btn sm" href="${esc(f.issue.url)}" target="_blank" rel="noopener">Filed #${f.issue.number} ↗</a>` : `<button class="btn sm" data-file="${esc(f.id)}" ${SEC.gh && SEC.gh.installed && SEC.gh.authed ? "" : "disabled title='GitHub not ready — set GH_TOKEN in .env and restart npm run ui'"}>File issue</button>`}
         <button class="btn sm" data-copy="${esc(f.id)}">Copy as issue</button>
         <button class="btn sm danger" data-ignore="${esc(f.id)}" title="Hide this finding now and in later scans">Not a bug</button>
         <span class="msg" id="sm-${esc(f.id)}"></span>
@@ -1622,6 +1622,7 @@ function renderSecurity() {
               ${SEC_SEV.filter((s) => counts[s]).map((s) => `<button class="sev-pill ${s}" data-sev="${s}" style="cursor:pointer;border:0;${SEC.sevFilter === s ? "outline:2px solid var(--sev)" : ""}">${counts[s]} ${s}</button>`).join("")}
               <span class="hint">· ${r.findings.filter((x) => x.status === "new").length} new · ${(r.fixed || []).length} fixed since last scan${r.ignored ? ` · ${r.ignored} marked not a bug` : ""}</span>
             </div>
+            ${r.bugRepo ? `<p class="hint">Issues file to <a href="https://github.com/${esc(r.bugRepo)}/issues" target="_blank" rel="noopener"><code>${esc(r.bugRepo)}</code></a>${SEC.gh && SEC.gh.authed ? ` · as <b>${esc(SEC.gh.account || "?")}</b>` : " · restart npm run ui to enable filing"}.</p>` : ""}
           </div>
         </div>
         ${list.length ? `<div class="findings">${list.map((x) => renderSecFinding(x, m)).join("")}</div>` : `<p class="hint">No findings${SEC.sevFilter ? " at this severity" : ""}. 🎉</p>`}
