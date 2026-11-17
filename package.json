@@ -11,7 +11,8 @@
     "ui": "node scripts/addonsUi.js",
     "ui:accommodation": "node scripts/addonsUi.js",
     "doctor": "node scripts/doctor.js",
-    "report": "playwright show-report"
+    "report": "playwright show-report",
+    "qa-report": "node scripts/qaReport.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",

@@ -28,7 +28,7 @@ const ROOT = path.resolve(__dirname, "..");
 require("dotenv").config({ path: path.join(ROOT, ".env"), quiet: true });
 
 const { ADDONS, GROUP_ORDER } = require("../config/addons");
-const { buildReport } = require("./repoAudit");
+const { buildReport, reportFindingForIssue, matchIssues, saveIssueLinks } = require("./repoAudit");
 const doctor = require("./doctor");
 const { CHECKLIST } = require("./doctor/checklist");
 const { evaluate: evaluateStandards } = require("./doctor/standards");
@@ -36,6 +36,13 @@ const { PAYLOADS } = require("./doctor/payloads");
 const { buildUrlPayloads } = require("./doctor/urlBuilder");
 const { buildPlan: buildRequestPlan } = require("./doctor/requestBuilder");
 const github = require("./doctor/github");
+
+/** The QA report plus where its issues file to (what the QA Report tab reads). */
+async function reportWithRepo(addon, opts = { doScan: false }) {
+  const report = await buildReport(addon, opts);
+  report.bugRepo = addon.bugRepo || github.loadConfig().repo || "";
+  return report;
+}
 let doctorScan = null; // the security scan in progress, if any (one at a time)
 let doctorLast = null; // how the last scan ended: { ok, name } or { ok: false, error }
 const slack = require("./slackNotify");
@@ -415,9 +422,19 @@ const server = http.createServer(async (req, res) => {
       if (!addon.report) return sendJson(res, 404, { ok: false, error: "No QA report for this add-on yet." });
       // POST re-scans the repo (git pull + re-locate); GET returns what's on disk.
       const doScan = req.method === "POST";
-      const report = await buildReport(addon, { doScan });
-      report.bugRepo = addon.bugRepo || github.loadConfig().repo || "";
-      return sendJson(res, 200, { ok: true, report });
+      return sendJson(res, 200, { ok: true, report: await reportWithRepo(addon, { doScan }) });
+    }
+    // Preview one QA-Report finding's issue (title/body/repo) — nothing is sent.
+    const reportPreviewMatch = p.match(/^\/api\/report\/([a-z0-9-]+)\/issue-preview$/);
+    if (req.method === "POST" && reportPreviewMatch) {
+      const addon = findAddon(reportPreviewMatch[1]);
+      if (!addon || !addon.report) return sendJson(res, 404, { ok: false, error: "Unknown add-on or no QA report." });
+      const { id } = await readBody(req);
+      const report = await buildReport(addon, { doScan: false });
+      const f = (report.findings || []).find((x) => x.id === id);
+      if (!f) return sendJson(res, 404, { ok: false, error: "Finding not found." });
+      const preview = github.previewIssue(reportFindingForIssue(f), { name: addon.name, repo: report.repoUrl || report.repo, commit: report.commit }, { repo: addon.bugRepo });
+      return sendJson(res, 200, { ok: true, preview });
     }
     // File one QA-Report finding as a GitHub issue.
     const reportFileMatch = p.match(/^\/api\/report\/([a-z0-9-]+)\/file-issue$/);
@@ -429,32 +446,68 @@ const server = http.createServer(async (req, res) => {
         const report = await buildReport(addon, { doScan: false });
         const f = (report.findings || []).find((x) => x.id === id);
         if (!f) return sendJson(res, 404, { ok: false, error: "Finding not found." });
-        const loc = f.matchedAt || (f.location || [])[0] || {};
-        const normalized = {
-          id: f.id,
-          severity: f.severity,
-          rule: f.category || "qa",
-          title: f.title,
-          file: loc.file || null,
-          line: loc.line || null,
-          cwe: f.cwe || "",
-          detail: [f.evidence ? `Evidence: ${f.evidence}` : "", loc.note ? `Note: ${loc.note}` : ""].filter(Boolean).join("\n"),
-          impact: f.impact,
-          repro: f.steps,
-          fix: f.fix,
-        };
-        const issue = await github.fileIssue(normalized, { name: addon.name, repo: report.repoUrl || report.repo, commit: report.commit }, { repo: addon.bugRepo });
+        const issue = await github.fileIssue(reportFindingForIssue(f), { name: addon.name, repo: report.repoUrl || report.repo, commit: report.commit }, { repo: addon.bugRepo });
         // Record the issue back onto the curated qa-report.json so the card shows "Filed #n".
-        const reportPath = path.join(ROOT, addon.report);
         try {
-          const saved = JSON.parse(fs.readFileSync(reportPath, "utf8"));
-          const sf = (saved.findings || []).find((x) => x.id === id);
-          if (sf) {
-            sf.issue = { number: issue.number, url: issue.url };
-            fs.writeFileSync(reportPath, JSON.stringify(saved, null, 2));
-          }
+          saveIssueLinks(addon.slug, { [id]: { number: issue.number, url: issue.url, state: "open", source: issue.existed ? "github" : "tool", linkedAt: new Date().toISOString() } });
         } catch {}
-        return sendJson(res, 200, { ok: true, issue, report: await buildReport(addon, { doScan: false }) });
+        return sendJson(res, 200, { ok: true, issue, report: await reportWithRepo(addon) });
+      } catch (error) {
+        return sendJson(res, 400, { ok: false, error: error.message });
+      }
+    }
+    // Sync with GitHub (read-only): mark findings already filed — through this
+    // tool or by hand on GitHub — and refresh each linked issue's open/closed state.
+    const reportSyncMatch = p.match(/^\/api\/report\/([a-z0-9-]+)\/sync-issues$/);
+    if (req.method === "POST" && reportSyncMatch) {
+      const addon = findAddon(reportSyncMatch[1]);
+      if (!addon || !addon.report) return sendJson(res, 404, { ok: false, error: "Unknown add-on or no QA report." });
+      const repo = addon.bugRepo || github.loadConfig().repo;
+      if (!repo) return sendJson(res, 400, { ok: false, error: "No GitHub repo configured for this add-on." });
+      try {
+        const issues = await github.listIssues(repo);
+        const report = await buildReport(addon, { doScan: false });
+        const findings = report.findings || [];
+        const byNumber = new Map(issues.map((i) => [i.number, i]));
+        const matched = matchIssues(findings.filter((f) => !f.issue), issues);
+        const links = {};
+        let found = 0;
+        for (const f of findings) {
+          const now = new Date().toISOString();
+          if (f.issue) {
+            const live = byNumber.get(Number(f.issue.number));
+            if (live) links[f.id] = { ...f.issue, url: live.url, state: live.state, title: live.title, closedAt: live.closedAt || null, syncedAt: now };
+          } else if (matched[f.id]) {
+            const i = matched[f.id];
+            links[f.id] = { number: i.number, url: i.url, state: i.state, title: i.title, closedAt: i.closedAt || null, source: "github", linkedAt: now, syncedAt: now };
+            found++;
+          }
+        }
+        saveIssueLinks(addon.slug, links, { issuesSyncedAt: new Date().toISOString() });
+        return sendJson(res, 200, { ok: true, found, report: await reportWithRepo(addon) });
+      } catch (error) {
+        return sendJson(res, 400, { ok: false, error: error.message });
+      }
+    }
+    // Link a finding to an issue filed outside the tool (number or URL), or unlink it.
+    const reportLinkMatch = p.match(/^\/api\/report\/([a-z0-9-]+)\/link-issue$/);
+    if (req.method === "POST" && reportLinkMatch) {
+      const addon = findAddon(reportLinkMatch[1]);
+      if (!addon || !addon.report) return sendJson(res, 404, { ok: false, error: "Unknown add-on or no QA report." });
+      const repo = addon.bugRepo || github.loadConfig().repo;
+      const { id, ref } = await readBody(req);
+      try {
+        if (!ref) {
+          saveIssueLinks(addon.slug, { [id]: null });
+          return sendJson(res, 200, { ok: true, report: await reportWithRepo(addon) });
+        }
+        const urlRepo = (String(ref).match(/github\.com\/([^/]+\/[^/]+)\/issues\/\d+/) || [])[1];
+        if (urlRepo && urlRepo.toLowerCase() !== String(repo).toLowerCase()) throw new Error(`That issue is in ${urlRepo}; this add-on files to ${repo}.`);
+        const number = Number((String(ref).match(/(\d+)\s*$/) || [])[1]);
+        if (!number) throw new Error("Enter an issue number (e.g. 57) or its GitHub URL.");
+        const i = await github.getIssue(repo, number);
+        saveIssueLinks(addon.slug, { [id]: { number: i.number, url: i.url, state: i.state, title: i.title, source: "manual", linkedAt: new Date().toISOString() } });
+        return sendJson(res, 200, { ok: true, issue: i, report: await reportWithRepo(addon) });
       } catch (error) {
         return sendJson(res, 400, { ok: false, error: error.message });
       }

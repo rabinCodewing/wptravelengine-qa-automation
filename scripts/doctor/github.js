@@ -114,7 +114,7 @@ function issueBody(f, meta) {
   // Prefer the ready-made markdown readReport() attaches; fall back to fields.
   const body =
     f.markdown ||
-    [`**Severity** ${f.severity} · **Rule** \`${f.rule}\`${f.cwe ? ` · ${f.cwe}` : ""}`, "", f.detail || "", f.impact ? `\n**Impact.** ${f.impact}` : "", f.repro?.length ? `\n**Steps**\n${f.repro.map((s, i) => `${i + 1}. ${s}`).join("\n")}` : "", f.fix ? `\n**Fix.** ${f.fix}` : ""].join("\n");
+    [`**Severity** ${f.severity} · **Rule** \`${f.rule}\`${f.cwe ? ` · ${f.cwe}` : ""}`, "", f.detail || "", f.impact ? `\n**Impact.** ${f.impact}` : "", f.experience?.length ? `\n**What the user experiences**\n${f.experience.map((s) => `- ${s}`).join("\n")}` : "", f.repro?.length ? `\n**Steps**\n${f.repro.map((s, i) => `${i + 1}. ${s}`).join("\n")}` : "", f.fix ? `\n**Fix.** ${f.fix}` : ""].join("\n");
   const src = meta?.repo ? `Code: \`${meta.repo}\`${meta.commit ? ` @ \`${meta.commit}\`` : ""}` : meta?.site ? `Site: ${meta.site}` : "";
   return `${body}\n\n---\n_Filed from WPTE Doctor (${meta?.name || "scan"}). ${src} · finding \`DOC-${f.id}\`._`;
 }
@@ -162,4 +162,37 @@ async function fileIssue(finding, meta, opts = {}) {
   return { number, url, existed: false };
 }
 
-module.exports = { resolveGh, status, loadConfig, saveConfig, fileIssue };
+/**
+ * Every issue in `repo` (open and closed, PRs excluded) — read-only. Used to
+ * spot findings that were already filed, including ones filed by hand on
+ * GitHub rather than through this tool.
+ */
+async function listIssues(repo) {
+  const gh = await resolveGh();
+  if (!gh) throw new Error("GitHub CLI (gh) not found.");
+  const r = await run(gh, ["issue", "list", "-R", repo, "--state", "all", "--limit", "500", "--json", "number,url,title,state,body,closedAt"]);
+  if (!r.ok) throw new Error(r.stderr.split("\n").filter(Boolean).slice(-1)[0] || "gh issue list failed");
+  return JSON.parse(r.stdout || "[]").map((i) => ({ ...i, state: String(i.state).toLowerCase() }));
+}
+
+/** One issue by number — read-only. Returns {number,url,title,state} or throws. */
+async function getIssue(repo, number) {
+  const gh = await resolveGh();
+  if (!gh) throw new Error("GitHub CLI (gh) not found.");
+  const r = await run(gh, ["issue", "view", String(number), "-R", repo, "--json", "number,url,title,state"]);
+  if (!r.ok) throw new Error(`Issue #${number} not found in ${repo}.`);
+  const i = JSON.parse(r.stdout);
+  return { ...i, state: String(i.state).toLowerCase() };
+}
+
+/**
+ * What fileIssue() WOULD create — same title, body and target repo — without
+ * touching GitHub. Used by the QA Report's "Preview issue" so a human can
+ * verify the issue before filing it.
+ */
+function previewIssue(finding, meta, opts = {}) {
+  const repo = opts.repo || loadConfig().repo || "";
+  return { repo, title: issueTitle(finding), body: issueBody(finding, meta) };
+}
+
+module.exports = { resolveGh, status, loadConfig, saveConfig, fileIssue, previewIssue, listIssues, getIssue };

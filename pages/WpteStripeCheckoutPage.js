@@ -126,7 +126,8 @@ class WpteStripeCheckoutPage {
     await this.payButton.evaluate((el) => el.scrollIntoView({ block: "center" }));
     await this.payButton.click();
 
-    const bookingIdLine = this.page.getByText(/Booking ID:/).first();
+    // Older Thank You template: "Booking ID: 123"; newer: "BOOKING REFERENCE #123".
+    const bookingIdLine = this.page.getByText(/Booking ID:|Booking Reference/i).first();
     try {
       await bookingIdLine.waitFor({ state: "visible", timeout: 120000 });
     } catch (error) {
@@ -137,7 +138,7 @@ class WpteStripeCheckoutPage {
       throw new Error(`No Thank You page after paying (still on ${this.page.url()}). ${shown.filter(Boolean).join(" | ")}`, { cause: error });
     }
     const thankYouText = await this.page.locator("body").innerText();
-    const bookingId = Number((thankYouText.match(/Booking ID:\s*(\d+)/) || [])[1]);
+    const bookingId = Number((thankYouText.match(/Booking ID:\s*(\d+)/) || thankYouText.match(/Booking Reference\s*#?\s*(\d+)/i) || [])[1]);
     expect(bookingId, "Booking ID on the Thank You page").toBeGreaterThan(0);
     return { bookingId, thankYouText, billing };
   }

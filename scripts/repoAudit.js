@@ -150,4 +150,59 @@ async function buildReport(addon, { doScan = false } = {}) {
   return result;
 }
 
-module.exports = { buildReport, syncRepo };
+/** A curated QA-Report finding in the shape github.fileIssue/previewIssue expect. */
+function reportFindingForIssue(f) {
+  const loc = f.matchedAt || (f.location || [])[0] || {};
+  return {
+    id: f.id,
+    severity: f.severity,
+    rule: f.category || "qa",
+    title: f.title,
+    file: loc.file || null,
+    line: loc.line || null,
+    cwe: f.cwe || "",
+    detail: [f.evidence ? `Evidence: ${f.evidence}` : "", loc.note ? `Note: ${loc.note}` : ""].filter(Boolean).join("\n"),
+    impact: f.impact,
+    experience: f.userExperience,
+    repro: f.steps,
+    fix: f.fix,
+  };
+}
+
+const normTitle = (s) => String(s || "").toLowerCase().replace(/\[[^\]]*\]|\([^)]*\)/g, " ").replace(/[^a-z0-9]+/g, " ").trim();
+
+/**
+ * Matches a repo's issues to QA-Report findings. An issue belongs to a finding
+ * when it carries the finding's tag (DOC-<id>) in its title or body — what this
+ * tool writes — or, for issues written by hand on GitHub, when its title
+ * contains the finding's title. Returns { [findingId]: issue }.
+ */
+function matchIssues(findings, issues) {
+  const out = {};
+  for (const f of findings) {
+    const tag = new RegExp(`\\bDOC-${f.id}\\b`);
+    const want = normTitle(f.title);
+    const hit =
+      issues.find((i) => tag.test(i.title) || tag.test(i.body || "")) ||
+      (want.length >= 24 ? issues.find((i) => normTitle(i.title).includes(want)) : null);
+    if (hit) out[f.id] = hit;
+  }
+  return out;
+}
+
+/**
+ * Records issue links on the curated qa-report.json. `links` maps finding id →
+ * issue record ({number,url,state,title,source}) or null to unlink.
+ */
+function saveIssueLinks(slug, links, extra = {}) {
+  const file = reportFile(slug);
+  const saved = JSON.parse(fs.readFileSync(file, "utf8"));
+  for (const f of saved.findings || []) {
+    if (!(f.id in links)) continue;
+    if (links[f.id]) f.issue = links[f.id];
+    else delete f.issue;
+  }
+  fs.writeFileSync(file, JSON.stringify({ ...saved, ...extra }, null, 2));
+}
+
+module.exports = { buildReport, syncRepo, reportFindingForIssue, matchIssues, saveIssueLinks };

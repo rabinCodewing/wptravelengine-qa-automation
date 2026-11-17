@@ -393,6 +393,72 @@
   .sev-pill { font: 700 10.5px/1 var(--body); letter-spacing: .05em; text-transform: uppercase; padding: 4px 9px; border-radius: 999px; background: var(--sev-wash); color: var(--sev); white-space: nowrap; }
   .stat-pill { font: 700 10.5px/1 var(--body); letter-spacing: .04em; text-transform: uppercase; padding: 4px 9px; border-radius: 999px; background: var(--paper-2); color: var(--ink-2); }
   .stat-pill.confirmed { background: var(--fail-wash); color: var(--fail); }
+  .issue-preview { margin: 10px 0 4px; padding: 12px 14px; border-radius: 10px; background: var(--paper-2); display: grid; gap: 8px; min-width: 0; }
+  .issue-preview-title { font-weight: 600; overflow-wrap: anywhere; }
+  .issue-preview-body { margin: 0; font: 12px/1.6 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 420px; overflow: auto; }
+
+  /* GitHub filing ledger — what's already on GitHub vs still to file */
+  .gh-ledger { display: grid; gap: 12px; padding: 14px 0 16px; margin: 0 0 16px; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .ledger-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; }
+  .ledger-count { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 6px; color: var(--ink-2); font-size: 13px; }
+  .ledger-count b { font: 600 clamp(20px, 2.2vw, 26px)/1 var(--display); color: var(--ink); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .ledger-count span { margin-right: 14px; }
+  .ledger-count span:last-child { margin-right: 0; }
+  .ledger-count b.warn { color: var(--fail); }
+  .ledger-count b.muted { color: var(--ink-3); }
+  .ledger-sync { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .ledger-strip { display: flex; gap: 3px; flex-wrap: wrap; }
+  .ledger-strip .tick { flex: 1 0 8px; height: 8px; border-radius: 2px; background: var(--paper-2); }
+  .ledger-strip .tick.filed { background: var(--brand); }
+  .ledger-strip .tick.closed { background: var(--pass); }
+  .ledger-strip .tick.tofile { background: var(--fail-wash); box-shadow: inset 0 0 0 1.5px var(--fail); }
+  .ledger-strip .tick.unverified { background: transparent; box-shadow: inset 0 0 0 1px var(--rule); }
+  .gh-ledger .seg button span { margin-left: 6px; font: 600 11px var(--mono); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .gh-ledger .seg button[aria-pressed="true"] span { color: var(--brand); }
+  .ledger-empty { color: var(--ink-3); padding: 18px 2px; max-width: 60ch; }
+
+  /* Issue stamp on a finding row — a ticket with a perforated edge */
+  .gh-stamp { flex: none; display: inline-grid; grid-auto-flow: column; align-items: center; gap: 7px; padding: 5px 10px 5px 9px; border: 1px solid currentColor; border-left-style: dashed; border-radius: 7px; color: var(--brand); text-decoration: none; background: var(--sheet); transition: background .2s cubic-bezier(.2,.7,.2,1); }
+  .gh-stamp b { font: 700 13px/1 var(--mono); letter-spacing: -.01em; }
+  .gh-stamp span { font: 700 9.5px/1 var(--body); letter-spacing: .08em; text-transform: uppercase; }
+  .gh-stamp:hover, .gh-stamp:focus-visible { background: var(--brand-wash); }
+  .gh-stamp.closed { color: var(--pass); }
+  .gh-stamp.closed:hover, .gh-stamp.closed:focus-visible { background: var(--pass-wash); }
+  .gh-pending { flex: none; font: 700 9.5px/1 var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--fail); padding: 6px 9px; border: 1px dashed color-mix(in oklch, var(--fail) 55%, transparent); border-radius: 7px; }
+  .finding.is-filed { background: color-mix(in oklch, var(--sheet) 70%, var(--paper-2)); }
+  .finding.is-filed .finding-title b { color: var(--ink-2); }
+  .finding.is-closed .finding-title b { text-decoration: line-through; text-decoration-color: color-mix(in oklch, var(--ink-3) 60%, transparent); }
+
+  .gh-filed { display: flex; justify-content: space-between; align-items: center; gap: 10px 16px; flex-wrap: wrap; padding: 12px 14px; border-radius: 10px; background: var(--brand-wash); }
+  .gh-filed > div:first-child { display: grid; gap: 3px; min-width: 0; }
+  .gh-filed a { color: var(--brand); }
+  .gh-filed .hint { overflow-wrap: anywhere; }
+  /* In-card "File to GitHub" confirmation — replaces the browser confirm() */
+  .file-confirm { position: relative; display: grid; gap: 8px; padding: 16px 18px 14px; border-radius: 12px; background: color-mix(in oklch, var(--brand-wash) 55%, var(--sheet)); border: 1px solid color-mix(in oklch, var(--brand) 35%, var(--rule)); border-top: 2px dashed color-mix(in oklch, var(--brand) 55%, transparent); animation: fc-in .32s cubic-bezier(.16,1,.3,1); }
+  .fc-route { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font: 600 12px var(--mono); color: var(--ink-2); min-width: 0; }
+  .fc-route .fc-id { padding: 3px 7px; border-radius: 6px; background: var(--sheet); border: 1px solid var(--rule); color: var(--ink); }
+  .fc-route svg { width: 24px; height: 8px; flex: none; }
+  .fc-route svg path { stroke: var(--brand); stroke-width: 1.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .fc-route a { color: var(--brand); overflow-wrap: anywhere; text-decoration: none; }
+  .fc-route a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .fc-title { margin: 2px 0 0; font: 600 clamp(15px, 1.4vw, 16.5px)/1.4 var(--display); color: var(--ink); letter-spacing: -.005em; overflow-wrap: anywhere; max-width: 90ch; }
+  .fc-note { margin: 0; font-size: 13px; color: var(--ink-2); }
+  .fc-error { margin: 0; font-size: 13px; color: var(--fail); background: var(--fail-wash); padding: 8px 10px; border-radius: 8px; overflow-wrap: anywhere; }
+  .fc-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .fc-actions .btn.primary { display: inline-flex; align-items: center; gap: 8px; }
+  .fc-actions .btn.primary:hover:not(:disabled) { background: color-mix(in oklch, var(--brand) 88%, var(--ink)); }
+  .fc-inline { font-size: 13px; color: var(--ink-2); }
+  .spinner.sm { width: 13px; height: 13px; border-width: 2px; border-color: color-mix(in oklch, var(--brand-ink) 35%, transparent); border-top-color: var(--brand-ink); }
+  @keyframes fc-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .file-confirm { animation: none; } }
+  .linklike { border: 0; background: none; padding: 4px 2px; font: 600 13px var(--body); color: var(--brand); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+  .linklike:hover { text-decoration-thickness: 2px; }
+  .link-form { display: grid; gap: 6px; max-width: 640px; }
+  .link-form label { font: 600 12.5px var(--body); color: var(--ink-2); }
+  .link-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .link-row input { flex: 1 1 240px; min-width: 0; padding: 7px 10px; border: 1px solid var(--rule); border-radius: 8px; background: var(--sheet); color: var(--ink); font: 13px var(--mono); }
+  .link-row input:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
+  @media (max-width: 640px) { .finding-head { flex-wrap: wrap; } .gh-stamp, .gh-pending { margin-left: 22px; } }
   .report-intro { max-width: 78ch; color: var(--ink-2); margin: 2px 0 18px; }
 
   .findings { display: grid; gap: 12px; }
@@ -927,9 +993,16 @@ function renderReport(panel, d) {
   if (S.scanning) { panel.innerHTML = `<div class="scan-busy"><span class="spinner"></span> Looking into the repository — cloning, pulling latest and re-locating each finding in the source…</div>`; return; }
   if (r.error) { panel.innerHTML = `<div class="blank"><h2>No report</h2><p>${esc(r.error)}</p></div>`; return; }
 
-  const sevRank = { critical: 0, high: 1, medium: 2, low: 3 };
-  const findings = [...(r.findings || [])].sort((a, b) => (sevRank[a.severity] ?? 9) - (sevRank[b.severity] ?? 9));
-  const counts = findings.reduce((m, f) => ((m[f.severity] = (m[f.severity] || 0) + 1), m), {});
+  // First visit per add-on: pick up issues filed outside this tool (read-only).
+  S.ghSynced = S.ghSynced || {};
+  if (r.bugRepo && GHS && GHS.authed && !S.ghSynced[slug]) { S.ghSynced[slug] = true; syncIssues(slug, { quiet: true }); }
+
+  const sevRank = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
+  const all = [...(r.findings || [])].sort((a, b) => (filedRank(a) - filedRank(b)) || ((sevRank[a.severity] ?? 9) - (sevRank[b.severity] ?? 9)));
+  const counts = all.reduce((m, f) => ((m[f.severity] = (m[f.severity] || 0) + 1), m), {});
+  const ledger = { filed: all.filter(isFiled), toFile: all.filter((f) => !isFiled(f) && f.status === "confirmed"), unverified: all.filter((f) => !isFiled(f) && f.status !== "confirmed") };
+  const filter = S.reportFilter?.[slug] || "all";
+  const findings = filter === "filed" ? ledger.filed : filter === "tofile" ? ledger.toFile : filter === "unverified" ? ledger.unverified : all;
   const scan = r.scan;
   const repoUrl = r.repoUrl || r.repo;
 
@@ -946,8 +1019,10 @@ function renderReport(panel, d) {
     </div>
     ${r.bugRepo ? `<p class="hint">Issues file to <a href="https://github.com/${esc(r.bugRepo)}/issues" target="_blank" rel="noopener"><code>${esc(r.bugRepo)}</code></a>${GHS && GHS.authed ? ` · as <b>${esc(GHS.account || "?")}</b>` : " · <b>restart npm run ui</b> to enable filing"}.</p>` : ""}
     ${r.intro ? `<p class="report-intro">${esc(r.intro)}</p>` : ""}
+    ${r.bugRepo ? renderLedger(slug, r, all, ledger, filter) : ""}
     <div class="findings">
-      ${findings.map((f) => renderFinding(f, repoUrl, r.commit, slug)).join("")}
+      ${findings.length ? findings.map((f) => renderFinding(f, repoUrl, r.commit, slug)).join("")
+        : `<p class="ledger-empty">${filter === "tofile" ? "Nothing waiting — every confirmed finding is on GitHub." : filter === "filed" ? "Nothing filed yet. Open a confirmed finding to preview and file it, or link an issue that's already on GitHub." : "No findings in this view."}</p>`}
     </div>
     ${scan?.heuristics?.length ? `<details class="heuristics"><summary>Repo-wide pattern scan <span class="hint">(${scan.heuristics.reduce((n, h) => n + h.count, 0)} matches across the source)</span></summary>
       ${scan.heuristics.map((h) => `<div class="heur"><b>${esc(h.label)}</b> <span class="n">${h.count}</span>
@@ -964,6 +1039,121 @@ function renderReport(panel, d) {
   const sb = panel.querySelector("#scanBtn");
   if (sb) sb.onclick = () => loadReport(slug, { scan: true });
   panel.querySelectorAll("[data-reportfile]").forEach((b) => (b.onclick = () => fileReportIssue(slug, b.dataset.reportfile)));
+  panel.querySelectorAll("[data-reportpreview]").forEach((b) => (b.onclick = () => toggleIssuePreview(slug, b.dataset.reportpreview)));
+  panel.querySelectorAll("[data-ledgerfilter]").forEach((b) => (b.onclick = () => { S.reportFilter = { ...(S.reportFilter || {}), [slug]: b.dataset.ledgerfilter }; renderPanel(); }));
+  const syncBtn = panel.querySelector("#ghSyncBtn");
+  if (syncBtn) syncBtn.onclick = () => syncIssues(slug);
+  // Issue stamps sit inside the clickable finding header — let them open GitHub without toggling the card.
+  panel.querySelectorAll(".gh-stamp").forEach((a) => (a.onclick = (e) => e.stopPropagation()));
+  panel.querySelectorAll("[data-linkopen]").forEach((b) => (b.onclick = () => { S.linkOpen = b.dataset.linkopen; renderPanel(); panel.querySelector(`#link-${CSS.escape(b.dataset.linkopen)}`)?.focus(); }));
+  panel.querySelectorAll("[data-linkcancel]").forEach((b) => (b.onclick = () => { S.linkOpen = null; renderPanel(); }));
+  panel.querySelectorAll("form[data-linkform]").forEach((fm) => (fm.onsubmit = (e) => { e.preventDefault(); linkIssue(slug, fm.dataset.linkform, fm.querySelector("input").value.trim()); }));
+  panel.querySelectorAll("[data-unlink]").forEach((b) => (b.onclick = () => { S.unlinkConfirm = b.dataset.unlink; S.fileConfirm = null; renderPanel(); panel.querySelector("[data-unlinkno]")?.focus(); }));
+  panel.querySelectorAll("[data-unlinkyes]").forEach((b) => (b.onclick = () => { S.unlinkConfirm = null; linkIssue(slug, b.dataset.unlinkyes, null); }));
+  panel.querySelectorAll("[data-unlinkno]").forEach((b) => (b.onclick = () => { S.unlinkConfirm = null; renderPanel(); }));
+  panel.querySelectorAll("[data-fileconfirm]").forEach((b) => (b.onclick = () => confirmFileIssue(slug, b.dataset.fileconfirm)));
+  panel.querySelectorAll("[data-filecancel]").forEach((b) => (b.onclick = () => { S.fileConfirm = null; renderPanel(); }));
+  // A background re-render (e.g. the GitHub sync) must not drop focus out of an open confirmation.
+  if (S.fileConfirm && !S.fileConfirm.busy && (document.activeElement === document.body || !document.activeElement)) panel.querySelector("[data-fileconfirm]")?.focus({ preventScroll: true });
+  // Esc backs out of an open confirmation.
+  panel.querySelectorAll("[data-fcwrap]").forEach((w) => (w.onkeydown = (e) => { if (e.key === "Escape" && !S.fileConfirm?.busy) { S.fileConfirm = null; renderPanel(); } }));
+}
+
+// ── GitHub filing state ─────────────────────────────────────────────────────
+const isFiled = (f) => !!f.issue?.number;
+const filedRank = (f) => (isFiled(f) ? 2 : f.status === "confirmed" ? 0 : 1); // to file → unverified → filed
+
+function renderLedger(slug, r, all, ledger, filter) {
+  const ticks = all.map((f) => {
+    const cls = isFiled(f) ? (f.issue.state === "closed" ? "closed" : "filed") : f.status === "confirmed" ? "tofile" : "unverified";
+    const label = isFiled(f) ? `${f.id} · #${f.issue.number} ${f.issue.state || "open"}` : `${f.id} · ${cls === "tofile" ? "confirmed, not filed" : "unverified"}`;
+    return `<i class="tick ${cls}" title="${esc(label)}"></i>`;
+  }).join("");
+  const synced = r.issuesSyncedAt ? `synced ${ago(r.issuesSyncedAt)}` : "not synced yet";
+  const seg = (key, label, n) => `<button type="button" class="seg-btn" data-ledgerfilter="${key}" aria-pressed="${filter === key}">${label}<span>${n}</span></button>`;
+  return `<section class="gh-ledger" aria-label="GitHub filing">
+    <div class="ledger-top">
+      <div class="ledger-count">
+        <b>${ledger.filed.length}</b><span>on GitHub</span>
+        <b class="${ledger.toFile.length ? "warn" : ""}">${ledger.toFile.length}</b><span>confirmed, not filed</span>
+        <b class="muted">${ledger.unverified.length}</b><span>unverified</span>
+      </div>
+      <div class="ledger-sync">
+        <span class="hint">${S.syncing === slug ? "Checking GitHub…" : esc(synced)}</span>
+        <span class="msg" id="ghSyncMsg"></span>
+        <button class="btn sm ghost" id="ghSyncBtn" ${S.syncing === slug || !(GHS && GHS.authed) ? "disabled" : ""} title="Read ${esc(r.bugRepo)}'s issues and mark findings already filed there — nothing is posted">Sync with GitHub</button>
+      </div>
+    </div>
+    <div class="ledger-strip" role="img" aria-label="${ledger.filed.length} filed, ${ledger.toFile.length} to file, ${ledger.unverified.length} unverified">${ticks}</div>
+    <div class="seg" role="group" aria-label="Show">
+      ${seg("all", "All", all.length)}${seg("tofile", "To file", ledger.toFile.length)}${seg("filed", "Filed", ledger.filed.length)}${seg("unverified", "Unverified", ledger.unverified.length)}
+    </div>
+  </section>`;
+}
+
+function issueStamp(f) {
+  if (!isFiled(f)) return f.status === "confirmed" ? `<span class="gh-pending">Not filed</span>` : "";
+  const st = f.issue.state === "closed" ? "closed" : "open";
+  return `<a class="gh-stamp ${st}" href="${esc(f.issue.url)}" target="_blank" rel="noopener" title="${esc(f.issue.title || "Open on GitHub")}"><b>#${f.issue.number}</b><span>${st === "closed" ? "Closed" : "Open"}</span></a>`;
+}
+
+function issueOrigin(issue) {
+  const when = issue.linkedAt ? ` ${ago(issue.linkedAt)}` : "";
+  return issue.source === "github" ? `found on GitHub${when} — filed outside this tool`
+    : issue.source === "manual" ? `linked by hand${when}`
+    : `filed from this tool${when}`;
+}
+
+async function syncIssues(slug, { quiet = false } = {}) {
+  S.syncing = slug;
+  if (S.tab === "report") renderPanel();
+  try {
+    const r = await (await fetch(`/api/report/${slug}/sync-issues`, { method: "POST" })).json();
+    if (!r.ok) throw new Error(r.error);
+    S.report[slug] = r.report;
+    S.syncing = null;
+    if (S.tab === "report") renderPanel();
+    if (!quiet || r.found) flash("ghSyncMsg", r.found ? `Found ${r.found} issue${r.found === 1 ? "" : "s"} already on GitHub` : "Up to date with GitHub");
+  } catch (e) {
+    S.syncing = null;
+    if (S.tab === "report") renderPanel();
+    if (!quiet) flash("ghSyncMsg", `Couldn't reach GitHub: ${e.message}`, "bad");
+  }
+}
+
+async function linkIssue(slug, id, ref) {
+  try {
+    const r = await (await fetch(`/api/report/${slug}/link-issue`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, ref }) })).json();
+    if (!r.ok) throw new Error(r.error);
+    S.report[slug] = r.report;
+    S.linkOpen = null;
+    renderPanel();
+    flash(`rm-${id}`, ref ? `Linked to #${r.issue.number}` : "Unlinked");
+  } catch (e) {
+    flash(`rm-${id}`, e.message, "bad");
+  }
+}
+
+// Shows exactly what "File issue" would post (repo, title, body) — sends nothing.
+async function toggleIssuePreview(slug, id) {
+  S.issuePreview = S.issuePreview || {};
+  if (S.issuePreview[id]) { delete S.issuePreview[id]; renderPanel(); return; }
+  try {
+    const r = await (await fetch(`/api/report/${slug}/issue-preview`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) })).json();
+    if (!r.ok) throw new Error(r.error);
+    S.issuePreview[id] = r.preview;
+    renderPanel();
+  } catch (e) {
+    flash(`rm-${id}`, e.message, "bad");
+  }
+}
+
+function renderIssuePreview(p) {
+  return `<div class="issue-preview">
+    <div class="hint">Will be filed to <b>${esc(p.repo || "(no repo set)")}</b> — nothing has been sent.</div>
+    <div class="issue-preview-title">${esc(p.title)}</div>
+    <pre class="issue-preview-body">${esc(p.body)}</pre>
+  </div>`;
 }
 
 // Shared GitHub-filing status (used by both the Security tab and the QA Report tab).
@@ -973,19 +1163,63 @@ async function ensureGithub(then) {
   if (then) then();
   return GHS;
 }
+// Step 1 of filing: open the in-card confirmation, loaded with the real issue title.
 async function fileReportIssue(slug, id) {
-  const btn = document.querySelector(`[data-reportfile="${id}"]`);
-  if (btn) { btn.disabled = true; btn.textContent = "Filing…"; }
+  S.fileConfirm = { id, busy: false, error: "" };
+  S.unlinkConfirm = null;
+  renderPanel();
+  try {
+    S.issuePreview = S.issuePreview || {};
+    if (!S.issuePreview[id]?.title) {
+      const r = await (await fetch(`/api/report/${slug}/issue-preview`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) })).json();
+      if (!r.ok) throw new Error(r.error);
+      S.fileConfirm.preview = r.preview;
+    } else {
+      S.fileConfirm.preview = S.issuePreview[id];
+    }
+  } catch (e) {
+    if (S.fileConfirm?.id === id) S.fileConfirm.error = e.message;
+  }
+  if (S.fileConfirm?.id === id) { renderPanel(); document.querySelector("[data-fileconfirm]")?.focus(); }
+}
+
+// Step 2: actually post it.
+async function confirmFileIssue(slug, id) {
+  S.fileConfirm = { ...S.fileConfirm, busy: true, error: "" };
+  renderPanel();
   try {
     const r = await (await fetch(`/api/report/${slug}/file-issue`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) })).json();
     if (!r.ok) throw new Error(r.error);
     S.report[slug] = r.report;
+    S.fileConfirm = null;
+    if (S.issuePreview) delete S.issuePreview[id];
     renderPanel();
-    flash(`rm-${id}`, r.issue.existed ? `Already filed — #${r.issue.number}` : `Filed #${r.issue.number}`);
+    flash(`rm-${id}`, r.issue.existed ? `Already on GitHub — linked to #${r.issue.number}` : `Filed as #${r.issue.number}`);
   } catch (e) {
-    if (btn) { btn.disabled = false; btn.textContent = "File issue"; }
-    flash(`rm-${id}`, e.message, "bad");
+    S.fileConfirm = { ...S.fileConfirm, busy: false, error: e.message };
+    renderPanel();
   }
+}
+
+function renderFileConfirm(f, r) {
+  const fc = S.fileConfirm;
+  const repo = fc.preview?.repo || r?.bugRepo || "the add-on's repo";
+  const as = GHS && GHS.account ? ` as <b>${esc(GHS.account)}</b>` : "";
+  return `<div class="file-confirm" role="group" aria-labelledby="fc-${esc(f.id)}" data-fcwrap>
+    <div class="fc-route">
+      <span class="fc-id">${esc(f.id)}</span>
+      <svg viewBox="0 0 24 8" aria-hidden="true"><path d="M0 4h21M18 1l3 3-3 3"/></svg>
+      <a href="https://github.com/${esc(repo)}/issues" target="_blank" rel="noopener">${esc(repo)}</a>
+    </div>
+    <p class="fc-title" id="fc-${esc(f.id)}">${fc.preview ? esc(fc.preview.title) : `<span class="hint">Loading the issue title…</span>`}</p>
+    <p class="fc-note">This posts a new issue${as}. It can be closed on GitHub but not deleted from here.</p>
+    ${fc.error ? `<p class="fc-error" role="alert">${esc(fc.error)}</p>` : ""}
+    <div class="fc-actions">
+      <button class="btn sm primary" data-fileconfirm="${esc(f.id)}" ${fc.busy || !fc.preview ? "disabled" : ""}>${fc.busy ? `<span class="spinner sm"></span>Filing…` : "File to GitHub"}</button>
+      <button class="btn sm ghost" data-filecancel ${fc.busy ? "disabled" : ""}>Cancel</button>
+      ${fc.preview ? `<button class="linklike" data-reportpreview="${esc(f.id)}">${S.issuePreview?.[f.id] ? "Hide full body" : "Read the full body"}</button>` : ""}
+    </div>
+  </div>`;
 }
 
 function renderFinding(f, repoUrl, commit, slug) {
@@ -993,7 +1227,7 @@ function renderFinding(f, repoUrl, commit, slug) {
   const present = f.present === true ? `<span class="present yes" title="Still matched in the current source">in source</span>`
     : f.present === false ? `<span class="present no" title="Pattern no longer matched — may be fixed">not found</span>` : "";
   const loc = (f.matchedAt ? [f.matchedAt] : (f.location || []));
-  return `<article class="finding sev-${f.severity}${open ? " open" : ""}">
+  return `<article class="finding sev-${f.severity}${open ? " open" : ""}${isFiled(f) ? ` is-filed ${f.issue.state === "closed" ? "is-closed" : ""}` : ""}">
     <div class="finding-head" data-id="${esc(f.id)}" role="button" tabindex="0" aria-expanded="${open}">
       <span class="sev-dot ${f.severity}"></span>
       <div class="finding-title">
@@ -1006,19 +1240,43 @@ function renderFinding(f, repoUrl, commit, slug) {
           ${present}
         </div>
       </div>
+      ${issueStamp(f)}
       <svg class="chev" viewBox="0 0 20 20" aria-hidden="true"><path d="M6 8l4 4 4-4" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </div>
     ${open ? `<div class="finding-body">
       ${f.impact ? `<p><b>Impact.</b> ${esc(f.impact)}</p>` : ""}
+      ${f.userExperience?.length ? `<div class="steps"><b>What the user experiences</b><ul>${f.userExperience.map((s) => `<li>${esc(s)}</li>`).join("")}</ul></div>` : ""}
       ${f.evidence ? `<p><b>Evidence.</b> ${esc(f.evidence)}</p>` : ""}
       ${(loc && loc.length) ? `<div class="loc"><b>Where</b><ul>${loc.map((l) => `<li>${ghLink(repoUrl, l, commit)}${l.note ? ` — <span class="hint">${esc(l.note)}</span>` : ""}</li>`).join("")}</ul></div>` : ""}
       ${f.steps?.length ? `<div class="steps"><b>Steps to reproduce</b><ol>${f.steps.map((s) => `<li>${esc(s)}</li>`).join("")}</ol></div>` : ""}
       ${f.fix ? `<p class="fix"><b>Fix.</b> ${esc(f.fix)}</p>` : ""}
-      <div class="actions">
-        ${f.issue ? `<a class="btn sm" href="${esc(f.issue.url)}" target="_blank" rel="noopener">Filed #${f.issue.number} ↗</a>`
-          : `<button class="btn sm" data-reportfile="${esc(f.id)}" ${GHS && GHS.installed && GHS.authed ? "" : `disabled title="${esc(!GHS || !GHS.installed ? "GitHub CLI (gh) not found" : "gh not logged in — restart npm run ui after setting GH_TOKEN in .env")}"`}>File issue</button>`}
+      ${!isFiled(f) && S.issuePreview?.[f.id] ? renderIssuePreview(S.issuePreview[f.id]) : ""}
+      ${isFiled(f) ? `<div class="gh-filed">
+        <div>
+          <b>On GitHub as <a href="${esc(f.issue.url)}" target="_blank" rel="noopener">#${f.issue.number}</a> · ${f.issue.state === "closed" ? "closed" : "open"}</b>
+          <span class="hint">${esc(issueOrigin(f.issue))}${f.issue.title ? ` — “${esc(f.issue.title)}”` : ""}</span>
+        </div>
+        <div class="actions">
+          ${S.unlinkConfirm === f.id ? `<span class="fc-inline">Unlink from #${f.issue.number}? The issue stays on GitHub.</span>
+          <button class="btn sm danger" data-unlinkyes="${esc(f.id)}">Unlink</button>
+          <button class="btn sm ghost" data-unlinkno>Keep</button>` : `<a class="btn sm" href="${esc(f.issue.url)}" target="_blank" rel="noopener">Open #${f.issue.number} ↗</a>
+          <button class="btn sm ghost" data-unlink="${esc(f.id)}">Unlink</button>`}
+          <span class="msg" id="rm-${esc(f.id)}"></span>
+        </div>
+      </div>` : S.fileConfirm?.id === f.id ? renderFileConfirm(f, S.report[slug]) : `<div class="actions">
+        <button class="btn sm ghost" data-reportpreview="${esc(f.id)}">${S.issuePreview?.[f.id] ? "Hide preview" : "Preview issue"}</button>
+        <button class="btn sm" data-reportfile="${esc(f.id)}" ${GHS && GHS.installed && GHS.authed ? "" : `disabled title="${esc(!GHS || !GHS.installed ? "GitHub CLI (gh) not found" : "gh not logged in — restart npm run ui after setting GH_TOKEN in .env")}"`}>File issue</button>
+        ${S.linkOpen === f.id ? "" : `<button class="linklike" data-linkopen="${esc(f.id)}">Already on GitHub? Link it</button>`}
         <span class="msg" id="rm-${esc(f.id)}"></span>
       </div>
+      ${S.linkOpen === f.id ? `<form class="link-form" data-linkform="${esc(f.id)}">
+        <label for="link-${esc(f.id)}">Issue number or URL</label>
+        <div class="link-row">
+          <input id="link-${esc(f.id)}" type="text" inputmode="url" autocomplete="off" placeholder="57  or  https://github.com/…/issues/57" required>
+          <button class="btn sm" type="submit">Link</button>
+          <button class="btn sm ghost" type="button" data-linkcancel>Cancel</button>
+        </div>
+      </form>` : ""}`}
     </div>` : ""}
   </article>`;
 }
